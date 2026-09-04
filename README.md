@@ -32,6 +32,7 @@ src/
   backend/
     DocQuery.Domain/               entities, value objects, domain events
     DocQuery.Application/          commands, handlers, abstractions
+    DocQuery.Infrastructure/       adapters and resilience decorators
     DocQuery.Command.Api/          write side: document upload
   clients/
     docquery.web/                  React + Vite UI
@@ -40,11 +41,33 @@ tests/
     DocQuery.Tests.Common/         shared fakes
     DocQuery.Domain.Tests/
     DocQuery.Application.Tests/
+    DocQuery.Infrastructure.Tests/
     DocQuery.Command.Api.Tests/
 ```
 
-Further projects (contracts, persistence, infrastructure, query API, workers, deployment manifests) are added
-as the solution grows.
+Further projects (contracts, persistence, query API, workers, deployment manifests) are added as the solution
+grows.
+
+## Command API
+
+`POST /documents` accepts a multipart form with one `file` part containing a PDF and returns `202 Accepted`
+with `{ "documentId": "<guid>" }`. Errors are RFC 9457 problem details: `400` (missing, empty or non-PDF
+file), `413` (over `Upload:MaxFileSizeBytes`), `429` (rate limited), `503` with `Retry-After` (storage circuit
+open). `GET /health` and `GET /alive` serve readiness and liveness probes.
+
+Cross-cutting behaviour, all configured in `appsettings.json`:
+
+- **Resilience.** Calls to blob storage go through a Polly pipeline (retry with exponential backoff and jitter,
+  circuit breaker, per-attempt timeout) configured under `Resilience:BlobStorage`. See ADR 0007.
+- **Rate limiting.** Uploads are limited per client IP with a sliding window configured under
+  `RateLimiting:Uploads`. Behind an ingress, enable forwarded headers so the real client address is used.
+  See ADR 0008.
+- **CORS.** Browser origins allowed to call the API are listed under `Cors:AllowedOrigins`; the default is the
+  Vite dev server.
+
+**Current limitation:** the storage, repository and unit-of-work implementations are not written yet, so
+`POST /documents` fails at runtime until the infrastructure step lands. The endpoint and its behaviour are
+covered by tests using in-memory fakes.
 
 ## Build and test
 
