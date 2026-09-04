@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/backend/">
+    <Project Path="src/backend/DocQuery.Command.Api/DocQuery.Command.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/backend/">
+    <Project Path="tests/backend/DocQuery.Command.Api.Tests/DocQuery.Command.Api.Tests.csproj" />
+  </Folder>
+</Solution>
