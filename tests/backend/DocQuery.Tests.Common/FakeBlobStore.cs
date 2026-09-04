@@ -2,7 +2,10 @@ using DocQuery.Application.Abstractions;
 
 namespace DocQuery.Tests.Common;
 
-/// <summary>Records uploads in memory. A failure script can make the first N calls throw, for resilience tests.</summary>
+/// <summary>
+/// Records uploads in memory. A failure script can make calls throw after consuming the stream, which
+/// simulates a transfer that failed part-way and lets resilience tests prove the stream is rewound.
+/// </summary>
 public sealed class FakeBlobStore : IBlobStore
 {
     private readonly List<BlobUpload> _uploads = [];
@@ -22,13 +25,13 @@ public sealed class FakeBlobStore : IBlobStore
         CallCount++;
         var startPosition = content.CanSeek ? content.Position : -1;
 
+        using var buffer = new MemoryStream();
+        await content.CopyToAsync(buffer, cancellationToken);
+
         if (_failures.TryDequeue(out var failure))
         {
             throw failure;
         }
-
-        using var buffer = new MemoryStream();
-        await content.CopyToAsync(buffer, cancellationToken);
 
         _uploads.Add(new BlobUpload(blobName, contentType, buffer.Length, startPosition));
     }
