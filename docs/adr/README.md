@@ -13,3 +13,4 @@ Template: [template.md](template.md)
 | [0004](0004-service-bus-behind-event-bus-abstraction.md) | Azure Service Bus behind an `IEventBus` abstraction | Accepted |
 | [0005](0005-no-authentication-in-demo.md) | No authentication or authorization in the demo | Accepted |
 | [0006](0006-aspire-for-local-orchestration.md) | Aspire for local orchestration | Accepted |
+| [0007](0007-polly-resilience-for-outbound-dependencies.md) | Polly retry and circuit breaker around outbound dependencies | Accepted |

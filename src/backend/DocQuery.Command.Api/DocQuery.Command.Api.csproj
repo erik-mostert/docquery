@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\DocQuery.ServiceDefaults\DocQuery.ServiceDefaults.csproj" />
     <ProjectReference Include="..\DocQuery.Application\DocQuery.Application.csproj" />
+    <ProjectReference Include="..\DocQuery.Infrastructure\DocQuery.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
