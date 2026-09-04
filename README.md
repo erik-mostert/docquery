@@ -8,6 +8,10 @@ publishes `DocumentChunked`, and an embedding worker generates embeddings with A
 them in PostgreSQL (pgvector). A query API answers natural-language questions over the documents using a
 RAG pipeline. All services are containerised and deployed to Kubernetes.
 
+## Design decisions
+
+Recorded as Architecture Decision Records in [docs/adr](docs/adr/README.md).
+
 ## Demo scope
 
 This is a demonstration project. It deliberately omits concerns that any production system must have:
