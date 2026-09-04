@@ -12,3 +12,4 @@ Template: [template.md](template.md)
 | [0003](0003-api-streams-uploads-to-blob-storage.md) | Command API streams PDF uploads to Blob Storage | Accepted |
 | [0004](0004-service-bus-behind-event-bus-abstraction.md) | Azure Service Bus behind an `IEventBus` abstraction | Accepted |
 | [0005](0005-no-authentication-in-demo.md) | No authentication or authorization in the demo | Accepted |
+| [0006](0006-aspire-for-local-orchestration.md) | Aspire for local orchestration | Accepted |

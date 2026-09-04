@@ -25,18 +25,26 @@ This is a demonstration project. It deliberately omits concerns that any product
 
 ```
 DocQuery.slnx
+docs/adr/                          architecture decision records
 src/
+  DocQuery.AppHost/                Aspire orchestration for local runs
+  DocQuery.ServiceDefaults/        telemetry, health checks, resilience defaults shared by all hosts
   backend/
+    DocQuery.Domain/               entities, value objects, domain events
+    DocQuery.Application/          commands, handlers, abstractions
     DocQuery.Command.Api/          write side: document upload
   clients/
     docquery.web/                  React + Vite UI
 tests/
   backend/
+    DocQuery.Tests.Common/         shared fakes
+    DocQuery.Domain.Tests/
+    DocQuery.Application.Tests/
     DocQuery.Command.Api.Tests/
 ```
 
-Further projects (domain, application, contracts, persistence, infrastructure, query API, workers,
-Aspire AppHost, deployment manifests) are added as the solution grows.
+Further projects (contracts, persistence, infrastructure, query API, workers, deployment manifests) are added
+as the solution grows.
 
 ## Build and test
 
@@ -45,10 +53,26 @@ dotnet build
 dotnet test
 ```
 
-UI:
+## Run locally
+
+Aspire starts the API and the Vite dev server together and opens a dashboard with logs, traces and metrics:
+
+```bash
+dotnet run --project src/DocQuery.AppHost
+```
+
+The UI can also be run on its own:
 
 ```bash
 cd src/clients/docquery.web
 npm install
 npm run dev
 ```
+
+### Troubleshooting
+
+**Aspire fails with `x509: certificate signed by unknown authority` or `DCP controller host exited unexpectedly`.**
+Aspire's orchestrator (`dcp.exe`) talks to itself over TLS on `127.0.0.1`. Antivirus products that inspect
+local TLS traffic (observed with Norton) re-sign that connection and DCP rejects it. Exclude `dcp.exe` and
+`dotnet.exe` from the antivirus TLS/HTTPS inspection feature, or disable that feature, then run again.
+Diagnostic logs can be captured by setting `DCP_DIAGNOSTICS_LOG_FOLDER` to a directory before running.

@@ -1,5 +1,8 @@
 <Solution>
-  <Folder Name="/src/" />
+  <Folder Name="/src/">
+    <Project Path="src/DocQuery.AppHost/DocQuery.AppHost.csproj" />
+    <Project Path="src/DocQuery.ServiceDefaults/DocQuery.ServiceDefaults.csproj" />
+  </Folder>
   <Folder Name="/src/backend/">
     <Project Path="src/backend/DocQuery.Application/DocQuery.Application.csproj" />
     <Project Path="src/backend/DocQuery.Command.Api/DocQuery.Command.Api.csproj" />

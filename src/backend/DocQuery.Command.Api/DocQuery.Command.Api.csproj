@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\DocQuery.ServiceDefaults\DocQuery.ServiceDefaults.csproj" />
     <ProjectReference Include="..\DocQuery.Application\DocQuery.Application.csproj" />
   </ItemGroup>
 
