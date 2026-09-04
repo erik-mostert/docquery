@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\backend\DocQuery.Application\DocQuery.Application.csproj" />
+    <ProjectReference Include="..\DocQuery.Tests.Common\DocQuery.Tests.Common.csproj" />
+  </ItemGroup>
+
+</Project>

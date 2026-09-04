@@ -4,4 +4,8 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DocQuery.Application\DocQuery.Application.csproj" />
+  </ItemGroup>
+
 </Project>

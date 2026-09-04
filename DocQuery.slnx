@@ -1,10 +1,15 @@
 <Solution>
   <Folder Name="/src/" />
   <Folder Name="/src/backend/">
+    <Project Path="src/backend/DocQuery.Application/DocQuery.Application.csproj" />
     <Project Path="src/backend/DocQuery.Command.Api/DocQuery.Command.Api.csproj" />
+    <Project Path="src/backend/DocQuery.Domain/DocQuery.Domain.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/backend/">
+    <Project Path="tests/backend/DocQuery.Application.Tests/DocQuery.Application.Tests.csproj" />
     <Project Path="tests/backend/DocQuery.Command.Api.Tests/DocQuery.Command.Api.Tests.csproj" />
+    <Project Path="tests/backend/DocQuery.Domain.Tests/DocQuery.Domain.Tests.csproj" />
+    <Project Path="tests/backend/DocQuery.Tests.Common/DocQuery.Tests.Common.csproj" />
   </Folder>
 </Solution>
