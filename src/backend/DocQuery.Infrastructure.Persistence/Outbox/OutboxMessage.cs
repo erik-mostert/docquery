@@ -1,10 +1,11 @@
 using System.Text.Json;
+using DocQuery.Application.Messaging;
 
 namespace DocQuery.Infrastructure.Persistence.Outbox;
 
 /// <summary>
 /// An integration message written in the same transaction as the state change that caused it (ADR 0010).
-/// A relay publishes unprocessed rows to the event bus and marks them processed.
+/// The relay publishes unprocessed rows to the event bus and marks them processed.
 /// </summary>
 public sealed class OutboxMessage
 {
@@ -16,7 +17,7 @@ public sealed class OutboxMessage
 
     public Guid Id { get; private set; }
 
-    /// <summary>Full name of the contract type, used by the relay to deserialize and route.</summary>
+    /// <summary>Full name of the contract type, used by consumers to deserialize and route.</summary>
     public string Type { get; private set; } = string.Empty;
 
     public string Payload { get; private set; } = string.Empty;
@@ -25,6 +26,10 @@ public sealed class OutboxMessage
 
     public DateTimeOffset? ProcessedAt { get; private set; }
 
+    /// <summary>Number of failed publish attempts so far.</summary>
+    public int Attempts { get; private set; }
+
+    /// <summary>Message of the most recent failed attempt; cleared once published.</summary>
     public string? Error { get; private set; }
 
     public static OutboxMessage From(object message, DateTimeOffset occurredAt)
@@ -42,11 +47,17 @@ public sealed class OutboxMessage
         };
     }
 
+    public OutboundMessage ToOutbound() => new(Id, Type, Payload, OccurredAt);
+
     public void MarkProcessed(DateTimeOffset processedAt)
     {
         ProcessedAt = processedAt;
         Error = null;
     }
 
-    public void MarkFailed(string error) => Error = error;
+    public void MarkFailed(string error)
+    {
+        Attempts++;
+        Error = error;
+    }
 }

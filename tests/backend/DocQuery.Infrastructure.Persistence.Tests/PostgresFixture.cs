@@ -33,8 +33,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         await _container.DisposeAsync();
     }
 
-    /// <summary>Creates an empty database in the container and returns a connection string for it.</summary>
-    public async Task<string> CreateFreshDatabaseAsync()
+    /// <summary>Creates a new database in the container, optionally migrated, and returns its connection string.</summary>
+    public async Task<string> CreateFreshDatabaseAsync(bool migrate = false)
     {
         var name = FormattableString.Invariant($"fresh_{Guid.NewGuid():N}");
         await using (var connection = new Npgsql.NpgsqlConnection(ConnectionString))
@@ -45,8 +45,18 @@ public sealed class PostgresFixture : IAsyncLifetime
             await command.ExecuteNonQueryAsync();
         }
 
-        return new Npgsql.NpgsqlConnectionStringBuilder(ConnectionString) { Database = name }.ConnectionString;
+        var fresh = new Npgsql.NpgsqlConnectionStringBuilder(ConnectionString) { Database = name }.ConnectionString;
+        if (migrate)
+        {
+            await using var context = CreateContext(fresh);
+            await context.Database.MigrateAsync();
+        }
+
+        return fresh;
     }
+
+    public static DocQueryDbContext CreateContext(string connectionString) =>
+        new(new DbContextOptionsBuilder<DocQueryDbContext>().UseNpgsql(connectionString).Options);
 
     public DocQueryDbContext CreateContext() =>
         new(new DbContextOptionsBuilder<DocQueryDbContext>().UseNpgsql(ConnectionString).Options);

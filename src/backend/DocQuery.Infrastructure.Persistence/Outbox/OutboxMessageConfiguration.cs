@@ -15,6 +15,7 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
         builder.Property(message => message.Payload).HasColumnType("jsonb").IsRequired();
         builder.Property(message => message.OccurredAt).IsRequired();
         builder.Property(message => message.ProcessedAt);
+        builder.Property(message => message.Attempts).IsRequired().HasDefaultValue(0);
         builder.Property(message => message.Error).HasMaxLength(4000);
 
         // The relay scans for unprocessed rows in order of occurrence.
