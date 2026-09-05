@@ -55,7 +55,9 @@ with `{ "documentId": "<guid>" }`. Errors are RFC 9457 problem details: `400` (m
 file), `413` (over `Upload:MaxFileSizeBytes`), `429` (rate limited), `503` with `Retry-After` (storage circuit
 open). `GET /health` and `GET /alive` serve readiness and liveness probes.
 
-Cross-cutting behaviour, all configured in `appsettings.json`:
+Cross-cutting behaviour, all configured in `appsettings.json`. Every option section is bound to a typed options
+class with range annotations and validated when the host starts, so an out-of-range value stops the process
+with a clear message instead of failing the first request:
 
 - **Resilience.** Calls to blob storage go through a Polly pipeline (retry with exponential backoff and jitter,
   circuit breaker, per-attempt timeout) configured under `Resilience:BlobStorage`. See ADR 0007.

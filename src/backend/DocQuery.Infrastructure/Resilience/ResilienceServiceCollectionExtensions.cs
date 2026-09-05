@@ -19,7 +19,10 @@ public static class ResilienceServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        services.Configure<BlobStorageResilienceOptions>(configuration.GetSection(BlobStorageResilienceOptions.SectionName));
+        services.AddOptions<BlobStorageResilienceOptions>()
+            .Bind(configuration.GetSection(BlobStorageResilienceOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         services.AddResiliencePipeline(ResiliencePipelineNames.BlobStorage, (builder, context) =>
         {

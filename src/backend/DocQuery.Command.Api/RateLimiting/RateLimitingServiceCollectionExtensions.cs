@@ -7,7 +7,10 @@ public static class RateLimitingServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
 
-        services.Configure<UploadRateLimitOptions>(configuration.GetSection(UploadRateLimitOptions.SectionName));
+        services.AddOptions<UploadRateLimitOptions>()
+            .Bind(configuration.GetSection(UploadRateLimitOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         services.AddRateLimiter(limiter =>
         {
