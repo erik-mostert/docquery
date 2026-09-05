@@ -1,8 +1,12 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Azure Blob Storage, run locally as Azurite. The "documents" container holds uploaded PDFs.
+// Azure Blob Storage, run locally as Azurite. The "documents" container holds uploaded PDFs. The blob port is
+// pinned to 10000 so Azure Storage Explorer's built-in "Emulator - Default Ports" connection works unchanged.
 var storage = builder.AddAzureStorage("storage")
-    .RunAsEmulator(azurite => azurite.WithDataVolume().WithLifetime(ContainerLifetime.Persistent));
+    .RunAsEmulator(azurite => azurite
+        .WithDataVolume()
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithBlobPort(10000));
 var documents = storage.AddBlobContainer("documents");
 
 // PostgreSQL from the pgvector image so embeddings can be stored later without changing the server.

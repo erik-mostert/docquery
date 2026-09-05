@@ -90,7 +90,9 @@ dashboard with logs, traces and metrics. Docker Desktop must be running for the 
 named Docker volumes and a persistent container lifetime, so uploaded documents and database rows survive
 between sessions and migrations run only once. To start clean, stop Aspire and remove the `docquery` containers
 and volumes (`docker ps -a`, `docker volume ls`). The generated PostgreSQL password lives in the AppHost user
-secrets, so pgAdmin can connect with the credentials shown on the resource in the dashboard.
+secrets, so pgAdmin can connect with the credentials shown on the resource in the dashboard. Azurite's blob
+port is pinned to 10000, so Azure Storage Explorer's built-in "Emulator - Default Ports" connection shows the
+`documents` container without any configuration.
 
 ```bash
 dotnet run --project src/DocQuery.AppHost
