@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\backend\DocQuery.Command.Api\DocQuery.Command.Api.csproj" />
+    <ProjectReference Include="..\backend\DocQuery.Workers.Chunking\DocQuery.Workers.Chunking.csproj" />
     <ProjectReference Include="..\backend\DocQuery.Workers.OutboxRelay\DocQuery.Workers.OutboxRelay.csproj" />
   </ItemGroup>
 

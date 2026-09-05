@@ -24,7 +24,10 @@ var database = postgres.AddDatabase("docquery");
 var serviceBus = builder.AddAzureServiceBus("servicebus")
     .RunAsEmulator(emulator => emulator.WithLifetime(ContainerLifetime.Persistent));
 var documentEvents = serviceBus.AddServiceBusTopic("document-events");
-documentEvents.AddServiceBusSubscription("chunking");
+// Five delivery attempts before a message is dead-lettered; permanent failures are dead-lettered immediately.
+documentEvents.AddServiceBusSubscription("chunking").WithProperties(subscription => subscription.MaxDeliveryCount = 5);
+// Created ahead of the embedding worker so DocumentChunked messages are retained rather than dropped.
+documentEvents.AddServiceBusSubscription("embedding").WithProperties(subscription => subscription.MaxDeliveryCount = 5);
 
 var commandApi = builder.AddProject<Projects.DocQuery_Command_Api>("command-api")
     .WithReference(documents).WaitFor(documents)
@@ -32,6 +35,14 @@ var commandApi = builder.AddProject<Projects.DocQuery_Command_Api>("command-api"
 
 // The relay waits for the API because the API applies migrations at startup.
 builder.AddProject<Projects.DocQuery_Workers_OutboxRelay>("outbox-relay")
+    .WithReference(database).WaitFor(database)
+    .WithReference(serviceBus).WaitFor(serviceBus)
+    .WaitFor(commandApi);
+
+// Consumes DocumentUploaded from the "chunking" subscription; reads blobs, writes chunks and outbox rows.
+// Resource names are one namespace, so the project cannot also be called "chunking".
+builder.AddProject<Projects.DocQuery_Workers_Chunking>("chunking-worker")
+    .WithReference(documents).WaitFor(documents)
     .WithReference(database).WaitFor(database)
     .WithReference(serviceBus).WaitFor(serviceBus)
     .WaitFor(commandApi);
