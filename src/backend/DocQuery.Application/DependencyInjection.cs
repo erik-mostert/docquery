@@ -1,5 +1,8 @@
 using DocQuery.Application.Abstractions;
+using DocQuery.Application.Documents.Chunking;
 using DocQuery.Application.Documents.Upload;
+using DocQuery.Application.Messaging;
+using DocQuery.Contracts.Documents;
 using DocQuery.Domain.Documents;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -8,13 +11,27 @@ namespace DocQuery.Application;
 
 public static class DependencyInjection
 {
-    /// <summary>Registers command handlers. Infrastructure registers the abstractions they depend on.</summary>
+    /// <summary>Command handlers for the write API. Infrastructure registers the abstractions they depend on.</summary>
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<ICommandHandler<UploadDocumentCommand, DocumentId>, UploadDocumentHandler>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Message handlers for the chunking worker. Kept separate from <see cref="AddApplication"/> because they depend
+    /// on services (PDF extraction, tokenizer, chunk repository) that only the chunking host provides.
+    /// </summary>
+    public static IServiceCollection AddChunking(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddIntegrationMessageHandler<DocumentUploaded, DocumentUploadedHandler>();
 
         return services;
     }
