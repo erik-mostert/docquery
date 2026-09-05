@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\backend\DocQuery.Workers.Chunking\DocQuery.Workers.Chunking.csproj" />
+    <ProjectReference Include="..\DocQuery.Tests.Common\DocQuery.Tests.Common.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -10,6 +10,7 @@
     <Project Path="src/backend/DocQuery.Domain/DocQuery.Domain.csproj" />
     <Project Path="src/backend/DocQuery.Infrastructure.Persistence/DocQuery.Infrastructure.Persistence.csproj" />
     <Project Path="src/backend/DocQuery.Infrastructure/DocQuery.Infrastructure.csproj" />
+    <Project Path="src/backend/DocQuery.Workers.Chunking/DocQuery.Workers.Chunking.csproj" />
     <Project Path="src/backend/DocQuery.Workers.OutboxRelay/DocQuery.Workers.OutboxRelay.csproj" />
   </Folder>
   <Folder Name="/tests/" />
@@ -20,6 +21,7 @@
     <Project Path="tests/backend/DocQuery.Infrastructure.Persistence.Tests/DocQuery.Infrastructure.Persistence.Tests.csproj" />
     <Project Path="tests/backend/DocQuery.Infrastructure.Tests/DocQuery.Infrastructure.Tests.csproj" />
     <Project Path="tests/backend/DocQuery.Tests.Common/DocQuery.Tests.Common.csproj" />
+    <Project Path="tests/backend/DocQuery.Workers.Chunking.Tests/DocQuery.Workers.Chunking.Tests.csproj" />
     <Project Path="tests/backend/DocQuery.Workers.OutboxRelay.Tests/DocQuery.Workers.OutboxRelay.Tests.csproj" />
   </Folder>
 </Solution>
