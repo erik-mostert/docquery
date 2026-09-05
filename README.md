@@ -86,7 +86,11 @@ engine they are reported as skipped, not failed.
 ## Run locally
 
 Aspire starts Azurite, PostgreSQL (pgvector image), the API and the Vite dev server together and opens a
-dashboard with logs, traces and metrics. Docker Desktop must be running for the emulators:
+dashboard with logs, traces and metrics. Docker Desktop must be running for the emulators. Both emulators use
+named Docker volumes and a persistent container lifetime, so uploaded documents and database rows survive
+between sessions and migrations run only once. To start clean, stop Aspire and remove the `docquery` containers
+and volumes (`docker ps -a`, `docker volume ls`). The generated PostgreSQL password lives in the AppHost user
+secrets, so pgAdmin can connect with the credentials shown on the resource in the dashboard.
 
 ```bash
 dotnet run --project src/DocQuery.AppHost
