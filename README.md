@@ -32,7 +32,9 @@ src/
   backend/
     DocQuery.Domain/               entities, value objects, domain events
     DocQuery.Application/          commands, handlers, abstractions
-    DocQuery.Infrastructure/       adapters and resilience decorators
+    DocQuery.Contracts/            integration message contracts shared with workers
+    DocQuery.Infrastructure/       Azure Blob Storage adapter and resilience decorators
+    DocQuery.Infrastructure.Persistence/  EF Core + PostgreSQL, migrations, outbox
     DocQuery.Command.Api/          write side: document upload
   clients/
     docquery.web/                  React + Vite UI
@@ -41,12 +43,12 @@ tests/
     DocQuery.Tests.Common/         shared fakes
     DocQuery.Domain.Tests/
     DocQuery.Application.Tests/
-    DocQuery.Infrastructure.Tests/
+    DocQuery.Infrastructure.Tests/            includes Azurite-backed tests (Docker)
+    DocQuery.Infrastructure.Persistence.Tests/  PostgreSQL-backed tests (Docker)
     DocQuery.Command.Api.Tests/
 ```
 
-Further projects (contracts, persistence, query API, workers, deployment manifests) are added as the solution
-grows.
+Further projects (query API, workers, deployment manifests) are added as the solution grows.
 
 ## Command API
 
@@ -67,9 +69,9 @@ with a clear message instead of failing the first request:
 - **CORS.** Browser origins allowed to call the API are listed under `Cors:AllowedOrigins`; the default is the
   Vite dev server.
 
-**Current limitation:** the storage, repository and unit-of-work implementations are not written yet, so
-`POST /documents` fails at runtime until the infrastructure step lands. The endpoint and its behaviour are
-covered by tests using in-memory fakes.
+Uploads are stored in the `documents` blob container (Azurite locally) and recorded in PostgreSQL together
+with an outbox row carrying the `DocumentUploaded` contract. A relay that publishes outbox rows to Azure
+Service Bus is the next step, so rows currently accumulate unprocessed.
 
 ## Build and test
 
@@ -78,9 +80,13 @@ dotnet build
 dotnet test
 ```
 
+Infrastructure tests start PostgreSQL and Azurite containers with Testcontainers. Without a running Docker
+engine they are reported as skipped, not failed.
+
 ## Run locally
 
-Aspire starts the API and the Vite dev server together and opens a dashboard with logs, traces and metrics:
+Aspire starts Azurite, PostgreSQL (pgvector image), the API and the Vite dev server together and opens a
+dashboard with logs, traces and metrics. Docker Desktop must be running for the emulators:
 
 ```bash
 dotnet run --project src/DocQuery.AppHost

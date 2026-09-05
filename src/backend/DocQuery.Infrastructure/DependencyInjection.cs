@@ -1,8 +1,8 @@
 using DocQuery.Application.Abstractions;
 using DocQuery.Infrastructure.Resilience;
 using DocQuery.Infrastructure.Storage;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Polly.Registry;
 
 namespace DocQuery.Infrastructure;
@@ -13,12 +13,21 @@ namespace DocQuery.Infrastructure;
 /// </summary>
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IHostApplicationBuilder AddInfrastructure(this IHostApplicationBuilder builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.Services.AddBlobStorageResilience(builder.Configuration);
+        builder.AddAzureBlobStorage();
+        builder.Services.AddResilientBlobStore();
+
+        return builder;
+    }
+
+    /// <summary>Exposes <see cref="IBlobStore"/> as the resilience decorator around the keyed raw adapter.</summary>
+    public static IServiceCollection AddResilientBlobStore(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
-
-        services.AddBlobStorageResilience(configuration);
 
         services.AddScoped<IBlobStore>(provider => new ResilientBlobStore(
             provider.GetRequiredKeyedService<IBlobStore>(ServiceKeys.RawBlobStore),

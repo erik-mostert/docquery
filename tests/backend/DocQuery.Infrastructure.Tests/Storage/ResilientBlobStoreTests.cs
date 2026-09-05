@@ -1,5 +1,6 @@
 using DocQuery.Application.Abstractions;
 using DocQuery.Infrastructure;
+using DocQuery.Infrastructure.Resilience;
 using DocQuery.Tests.Common;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -113,7 +114,8 @@ public sealed class ResilientBlobStoreTests
 
         var inner = new FakeBlobStore();
         var services = new ServiceCollection();
-        services.AddInfrastructure(configuration);
+        services.AddBlobStorageResilience(configuration);
+        services.AddResilientBlobStore();
         services.AddKeyedSingleton<IBlobStore>(ServiceKeys.RawBlobStore, inner);
 
         var store = services.BuildServiceProvider().GetRequiredService<IBlobStore>();

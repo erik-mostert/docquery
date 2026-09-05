@@ -5,6 +5,7 @@ using DocQuery.Command.Api.ExceptionHandling;
 using DocQuery.Command.Api.Options;
 using DocQuery.Command.Api.RateLimiting;
 using DocQuery.Infrastructure;
+using DocQuery.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +13,8 @@ builder.AddServiceDefaults();
 builder.Services.AddOpenApi();
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.AddInfrastructure();
+builder.AddPersistence();
 
 builder.Services.AddUploadOptions(builder.Configuration);
 builder.Services.AddProblemDetails();

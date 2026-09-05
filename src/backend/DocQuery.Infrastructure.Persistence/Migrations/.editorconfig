@@ -1,0 +1,4 @@
+# EF Core migrations are generated code; keep analyzers off them.
+[*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none

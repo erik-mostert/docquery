@@ -8,6 +8,7 @@
     <ProjectReference Include="..\..\DocQuery.ServiceDefaults\DocQuery.ServiceDefaults.csproj" />
     <ProjectReference Include="..\DocQuery.Application\DocQuery.Application.csproj" />
     <ProjectReference Include="..\DocQuery.Infrastructure\DocQuery.Infrastructure.csproj" />
+    <ProjectReference Include="..\DocQuery.Infrastructure.Persistence\DocQuery.Infrastructure.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

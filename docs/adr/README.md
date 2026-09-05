@@ -18,3 +18,5 @@ Template: [template.md](template.md)
 | [0009](0009-hand-rolled-command-handlers-and-endpoint-classes.md) | Hand-rolled command handlers and one class per endpoint | Accepted |
 | [0010](0010-domain-events-published-through-an-outbox.md) | Domain events raised by aggregates and published through an outbox | Accepted |
 | [0011](0011-upload-returns-202-accepted.md) | Upload returns 202 Accepted | Accepted |
+| [0012](0012-ef-core-postgresql-persistence-with-startup-migrations.md) | EF Core on PostgreSQL, migrations applied at startup, outbox table | Accepted |
+| [0013](0013-testcontainers-for-infrastructure-tests.md) | Testcontainers for infrastructure tests, skipped without Docker | Accepted |
