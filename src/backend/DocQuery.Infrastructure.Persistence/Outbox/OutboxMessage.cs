@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DocQuery.Application.Messaging;
+using DocQuery.Contracts;
 
 namespace DocQuery.Infrastructure.Persistence.Outbox;
 
@@ -9,7 +10,7 @@ namespace DocQuery.Infrastructure.Persistence.Outbox;
 /// </summary>
 public sealed class OutboxMessage
 {
-    public static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+    public static JsonSerializerOptions SerializerOptions => MessageSerialization.Options;
 
     private OutboxMessage()
     {
