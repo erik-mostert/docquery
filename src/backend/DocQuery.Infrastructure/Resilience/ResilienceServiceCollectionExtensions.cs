@@ -1,3 +1,4 @@
+using DocQuery.Application.Exceptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -10,8 +11,9 @@ namespace DocQuery.Infrastructure.Resilience;
 
 public static class ResilienceServiceCollectionExtensions
 {
+    // Everything is treated as transient except cancellation and "the thing does not exist", which no retry fixes.
     private static readonly PredicateBuilder<object> TransientFailures =
-        new PredicateBuilder().Handle<Exception>(exception => exception is not OperationCanceledException);
+        new PredicateBuilder().Handle<Exception>(exception => exception is not (OperationCanceledException or BlobNotFoundException));
 
     /// <summary>Registers the <see cref="ResiliencePipelineNames.BlobStorage"/> pipeline from <c>Resilience:BlobStorage</c>.</summary>
     public static IServiceCollection AddBlobStorageResilience(this IServiceCollection services, IConfiguration configuration) =>

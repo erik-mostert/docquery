@@ -1,6 +1,8 @@
+using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using DocQuery.Application.Abstractions;
+using DocQuery.Application.Exceptions;
 
 namespace DocQuery.Infrastructure.Storage;
 
@@ -15,5 +17,18 @@ internal sealed class AzureBlobStore(BlobContainerClient container) : IBlobStore
         };
 
         await container.GetBlobClient(blobName).UploadAsync(content, options, cancellationToken);
+    }
+
+    public async Task<Stream> DownloadAsync(string blobName, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await container.GetBlobClient(blobName).DownloadContentAsync(cancellationToken);
+            return result.Value.Content.ToStream();
+        }
+        catch (RequestFailedException exception) when (exception.Status == 404)
+        {
+            throw new BlobNotFoundException(blobName, exception);
+        }
     }
 }

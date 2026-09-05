@@ -1,3 +1,4 @@
+using DocQuery.Application.Exceptions;
 using DocQuery.Infrastructure.Storage;
 using DocQuery.Tests.Common;
 
@@ -39,6 +40,35 @@ public sealed class AzureBlobStoreTests(AzuriteFixture azurite)
 
         var downloaded = await container.GetBlobClient("doc.pdf").DownloadContentAsync();
         Assert.Equal(Second, downloaded.Value.Content.ToArray());
+    }
+
+    [DockerFact]
+    public async Task Download_returns_the_uploaded_bytes_as_a_seekable_stream()
+    {
+        var container = azurite.Container("documents-download");
+        await container.CreateIfNotExistsAsync();
+        var store = new AzureBlobStore(container);
+        using var content = new MemoryStream(First);
+        await store.UploadAsync("doc.pdf", content, "application/pdf", CancellationToken.None);
+
+        await using var downloaded = await store.DownloadAsync("doc.pdf", CancellationToken.None);
+
+        Assert.True(downloaded.CanSeek);
+        using var buffer = new MemoryStream();
+        await downloaded.CopyToAsync(buffer);
+        Assert.Equal(First, buffer.ToArray());
+    }
+
+    [DockerFact]
+    public async Task Download_of_a_missing_blob_throws_BlobNotFound()
+    {
+        var container = azurite.Container("documents-missing");
+        await container.CreateIfNotExistsAsync();
+        var store = new AzureBlobStore(container);
+
+        var exception = await Assert.ThrowsAsync<BlobNotFoundException>(() => store.DownloadAsync("nope.pdf", CancellationToken.None));
+
+        Assert.Equal("nope.pdf", exception.BlobName);
     }
 
     [DockerFact]

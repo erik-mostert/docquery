@@ -14,4 +14,7 @@ public sealed class InMemoryDocumentRepository : IDocumentRepository
         _documents.Add(document);
         return Task.CompletedTask;
     }
+
+    public Task<Document?> GetByIdAsync(DocumentId id, CancellationToken cancellationToken) =>
+        Task.FromResult(_documents.FirstOrDefault(document => document.Id == id));
 }

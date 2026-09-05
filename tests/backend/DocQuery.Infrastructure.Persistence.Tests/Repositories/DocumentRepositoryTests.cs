@@ -33,4 +33,26 @@ public sealed class DocumentRepositoryTests(PostgresFixture postgres)
         Assert.Equal(UploadedAt, stored.UploadedAt);
         Assert.Empty(stored.DomainEvents);
     }
+
+    [DockerFact]
+    public async Task GetByIdAsync_returns_the_document_or_null()
+    {
+        var document = Document.Upload("lookup.pdf", "application/pdf", 10, UploadedAt);
+        await using var services = postgres.CreateServices();
+        await using (var scope = services.CreateAsyncScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<IDocumentRepository>().AddAsync(document, CancellationToken.None);
+            await scope.ServiceProvider.GetRequiredService<IUnitOfWork>().SaveChangesAsync(CancellationToken.None);
+        }
+
+        await using var scope2 = services.CreateAsyncScope();
+        var repository = scope2.ServiceProvider.GetRequiredService<IDocumentRepository>();
+
+        var found = await repository.GetByIdAsync(document.Id, CancellationToken.None);
+        var missing = await repository.GetByIdAsync(DocumentId.Create(), CancellationToken.None);
+
+        Assert.NotNull(found);
+        Assert.Equal("lookup.pdf", found.FileName);
+        Assert.Null(missing);
+    }
 }

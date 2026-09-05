@@ -1,4 +1,5 @@
 using DocQuery.Application.Abstractions;
+using DocQuery.Application.Exceptions;
 using DocQuery.Infrastructure;
 using DocQuery.Infrastructure.Resilience;
 using DocQuery.Tests.Common;
@@ -92,6 +93,29 @@ public sealed class ResilientBlobStoreTests
             () => store.UploadAsync("doc.pdf", stream, "application/pdf", CancellationToken.None));
 
         Assert.Equal(1, inner.CallCount);
+    }
+
+    [Fact]
+    public async Task Retries_a_transient_download_failure()
+    {
+        var (store, inner) = Build(maxRetryAttempts: 3);
+        inner.Seed("doc.pdf", Content);
+        inner.FailNextCallWith(new IOException("blip"));
+
+        await using var downloaded = await store.DownloadAsync("doc.pdf", CancellationToken.None);
+
+        Assert.Equal(2, inner.DownloadCount);
+        Assert.Equal(Content.Length, downloaded.Length);
+    }
+
+    [Fact]
+    public async Task Does_not_retry_when_the_blob_does_not_exist()
+    {
+        var (store, inner) = Build(maxRetryAttempts: 3);
+
+        await Assert.ThrowsAsync<BlobNotFoundException>(() => store.DownloadAsync("missing.pdf", CancellationToken.None));
+
+        Assert.Equal(1, inner.DownloadCount);
     }
 
     private static (IBlobStore Store, FakeBlobStore Inner) Build(
