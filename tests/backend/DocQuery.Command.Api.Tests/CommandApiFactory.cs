@@ -24,6 +24,16 @@ public sealed class CommandApiFactory : WebApplicationFactory<Program>
 
     private const string PlaceholderDatabaseConnection = "Host=localhost;Database=docquery;Username=postgres;Password=placeholder";
 
+    /// <summary>Settings the host needs at registration time; shared with tests that compose the host themselves.</summary>
+    public static IReadOnlyDictionary<string, string?> PlaceholderSettings { get; } = new Dictionary<string, string?>
+    {
+        ["ConnectionStrings:documents"] = PlaceholderBlobConnection,
+        ["ConnectionStrings:docquery"] = PlaceholderDatabaseConnection,
+        ["BlobStorage:CreateContainerOnStartup"] = "false",
+        ["Persistence:ApplyMigrationsOnStartup"] = "false",
+        ["RateLimiting:Uploads:PermitLimit"] = "1000",
+    };
+
     public FakeBlobStore BlobStore { get; } = new();
 
     public InMemoryDocumentRepository Documents { get; } = new();
@@ -34,11 +44,10 @@ public sealed class CommandApiFactory : WebApplicationFactory<Program>
     {
         // UseSetting lands in host configuration before Program.cs runs. ConfigureAppConfiguration would be applied
         // only at Build(), too late for values the Aspire integrations read while registering services.
-        builder.UseSetting("ConnectionStrings:documents", PlaceholderBlobConnection);
-        builder.UseSetting("ConnectionStrings:docquery", PlaceholderDatabaseConnection);
-        builder.UseSetting("BlobStorage:CreateContainerOnStartup", "false");
-        builder.UseSetting("Persistence:ApplyMigrationsOnStartup", "false");
-        builder.UseSetting("RateLimiting:Uploads:PermitLimit", "1000");
+        foreach (var (key, value) in PlaceholderSettings)
+        {
+            builder.UseSetting(key, value);
+        }
 
         builder.ConfigureTestServices(services =>
         {

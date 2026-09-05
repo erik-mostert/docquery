@@ -26,6 +26,7 @@ This is a demonstration project. It deliberately omits concerns that any product
 ```
 DocQuery.slnx
 docs/adr/                          architecture decision records
+tools/                             single-file diagnostic programs (see tools/README.md)
 src/
   DocQuery.AppHost/                Aspire orchestration for local runs
   DocQuery.ServiceDefaults/        telemetry, health checks, resilience defaults shared by all hosts
@@ -33,9 +34,10 @@ src/
     DocQuery.Domain/               entities, value objects, domain events
     DocQuery.Application/          commands, handlers, abstractions
     DocQuery.Contracts/            integration message contracts shared with workers
-    DocQuery.Infrastructure/       Azure Blob Storage adapter and resilience decorators
-    DocQuery.Infrastructure.Persistence/  EF Core + PostgreSQL, migrations, outbox
+    DocQuery.Infrastructure/       Azure Blob Storage and Service Bus adapters, resilience decorators
+    DocQuery.Infrastructure.Persistence/  EF Core + PostgreSQL, migrations, outbox table and relay
     DocQuery.Command.Api/          write side: document upload
+    DocQuery.Workers.OutboxRelay/  publishes outbox rows to Service Bus
   clients/
     docquery.web/                  React + Vite UI
 tests/
@@ -43,12 +45,13 @@ tests/
     DocQuery.Tests.Common/         shared fakes
     DocQuery.Domain.Tests/
     DocQuery.Application.Tests/
-    DocQuery.Infrastructure.Tests/            includes Azurite-backed tests (Docker)
+    DocQuery.Infrastructure.Tests/            includes Azurite and Service Bus emulator tests (Docker)
     DocQuery.Infrastructure.Persistence.Tests/  PostgreSQL-backed tests (Docker)
     DocQuery.Command.Api.Tests/
+    DocQuery.Workers.OutboxRelay.Tests/
 ```
 
-Further projects (query API, workers, deployment manifests) are added as the solution grows.
+Further projects (chunking and embedding workers, query API, deployment manifests) are added as the solution grows.
 
 ## Command API
 
@@ -70,8 +73,24 @@ with a clear message instead of failing the first request:
   Vite dev server.
 
 Uploads are stored in the `documents` blob container (Azurite locally) and recorded in PostgreSQL together
-with an outbox row carrying the `DocumentUploaded` contract. A relay that publishes outbox rows to Azure
-Service Bus is the next step, so rows currently accumulate unprocessed.
+with an outbox row carrying the `DocumentUploaded` contract.
+
+## Outbox relay worker
+
+`DocQuery.Workers.OutboxRelay` polls `outbox_messages` (every `Outbox:PollInterval`, `Outbox:BatchSize` rows at
+a time under `FOR UPDATE SKIP LOCKED`) and publishes each row to the Service Bus topic `Messaging:TopicName`
+(`document-events`). Body is the JSON payload, `MessageId` the outbox id, `Subject` the contract type name.
+Failed rows record the error and attempt count and are retried on the next poll; delivery is at-least-once.
+Publishing goes through its own Polly pipeline under `Resilience:ServiceBus`. See ADR 0014.
+
+The Service Bus emulator has no UI. To see what the relay published, peek the subscription (non-destructive)
+with the connection string shown on the `servicebus` resource in the dashboard:
+
+```bash
+dotnet run tools/peek-servicebus.cs -- "<connection string>"
+```
+
+Arguments and conventions for tools are in [tools/README.md](tools/README.md).
 
 ## Build and test
 
@@ -85,10 +104,11 @@ engine they are reported as skipped, not failed.
 
 ## Run locally
 
-Aspire starts Azurite, PostgreSQL (pgvector image), the API and the Vite dev server together and opens a
-dashboard with logs, traces and metrics. Docker Desktop must be running for the emulators. Both emulators use
-named Docker volumes and a persistent container lifetime, so uploaded documents and database rows survive
-between sessions and migrations run only once. To start clean, stop Aspire and remove the `docquery` containers
+Aspire starts Azurite, PostgreSQL (pgvector image), the Service Bus emulator (with its SQL Edge sidecar), the
+API, the outbox relay worker and the Vite dev server together and opens a dashboard with logs, traces and
+metrics. Docker Desktop must be running for the emulators; the first start pulls several images. Azurite and
+PostgreSQL use named Docker volumes and all emulators keep a persistent container lifetime, so uploaded documents
+and database rows survive between sessions and migrations run only once. To start clean, stop Aspire and remove the `docquery` containers
 and volumes (`docker ps -a`, `docker volume ls`). The generated PostgreSQL password lives in the AppHost user
 secrets, so pgAdmin can connect with the credentials shown on the resource in the dashboard. Azurite's blob
 port is pinned to 10000, so Azure Storage Explorer's built-in "Emulator - Default Ports" connection shows the

@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" />
     <PackageReference Include="Aspire.Hosting.Azure.Storage" />
     <PackageReference Include="Aspire.Hosting.JavaScript" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
@@ -14,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\backend\DocQuery.Command.Api\DocQuery.Command.Api.csproj" />
+    <ProjectReference Include="..\backend\DocQuery.Workers.OutboxRelay\DocQuery.Workers.OutboxRelay.csproj" />
   </ItemGroup>
 
 </Project>

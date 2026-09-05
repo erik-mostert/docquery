@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <UserSecretsId>docquery-workers-outboxrelay</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DocQuery.ServiceDefaults\DocQuery.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\DocQuery.Infrastructure\DocQuery.Infrastructure.csproj" />
+    <ProjectReference Include="..\DocQuery.Infrastructure.Persistence\DocQuery.Infrastructure.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -20,3 +20,4 @@ Template: [template.md](template.md)
 | [0011](0011-upload-returns-202-accepted.md) | Upload returns 202 Accepted | Accepted |
 | [0012](0012-ef-core-postgresql-persistence-with-startup-migrations.md) | EF Core on PostgreSQL, migrations applied at startup, outbox table | Accepted |
 | [0013](0013-testcontainers-for-infrastructure-tests.md) | Testcontainers for infrastructure tests, skipped without Docker | Accepted |
+| [0014](0014-outbox-relay-worker-and-topic-subscriptions.md) | Outbox relay as its own worker, publishing to a topic with subscriptions | Accepted |

@@ -19,9 +19,22 @@ var postgres = builder.AddPostgres("postgres")
     .WithLifetime(ContainerLifetime.Persistent);
 var database = postgres.AddDatabase("docquery");
 
+// Azure Service Bus, run locally as the emulator (which brings its own SQL Edge sidecar). One topic carries every
+// document event; each worker owns a subscription (ADR 0014).
+var serviceBus = builder.AddAzureServiceBus("servicebus")
+    .RunAsEmulator(emulator => emulator.WithLifetime(ContainerLifetime.Persistent));
+var documentEvents = serviceBus.AddServiceBusTopic("document-events");
+documentEvents.AddServiceBusSubscription("chunking");
+
 var commandApi = builder.AddProject<Projects.DocQuery_Command_Api>("command-api")
     .WithReference(documents).WaitFor(documents)
     .WithReference(database).WaitFor(database);
+
+// The relay waits for the API because the API applies migrations at startup.
+builder.AddProject<Projects.DocQuery_Workers_OutboxRelay>("outbox-relay")
+    .WithReference(database).WaitFor(database)
+    .WithReference(serviceBus).WaitFor(serviceBus)
+    .WaitFor(commandApi);
 
 builder.AddViteApp("web", "../clients/docquery.web")
     .WithReference(commandApi)

@@ -1,41 +1,12 @@
-using DocQuery.Application;
-using DocQuery.Command.Api.Cors;
-using DocQuery.Command.Api.Endpoints;
-using DocQuery.Command.Api.ExceptionHandling;
-using DocQuery.Command.Api.Options;
-using DocQuery.Command.Api.RateLimiting;
-using DocQuery.Infrastructure;
-using DocQuery.Infrastructure.Persistence;
+using DocQuery.Command.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddServiceDefaults();
-builder.Services.AddOpenApi();
-
-builder.Services.AddApplication();
-builder.AddInfrastructure();
-builder.AddPersistence();
-
-builder.Services.AddUploadOptions(builder.Configuration);
-builder.Services.AddProblemDetails();
-builder.Services.AddExceptionHandler<DomainExceptionHandler>();
-builder.Services.AddExceptionHandler<BrokenCircuitExceptionHandler>();
-builder.Services.AddUploadRateLimiting(builder.Configuration);
-builder.Services.AddApiCors(builder.Configuration);
-builder.Services.AddEndpoints(typeof(Program).Assembly);
+CommandApiHost.ConfigureServices(builder);
 
 var app = builder.Build();
 
-app.UseExceptionHandler();
-app.UseCors();
-app.UseRateLimiter();
-
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
-app.MapEndpoints();
+CommandApiHost.ConfigurePipeline(app);
 
 app.Run();
 
