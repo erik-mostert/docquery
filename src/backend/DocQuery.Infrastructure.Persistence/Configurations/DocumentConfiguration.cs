@@ -11,9 +11,7 @@ internal sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.ToTable("documents");
 
         builder.HasKey(document => document.Id);
-        builder.Property(document => document.Id)
-            .HasConversion(id => id.Value, value => new DocumentId(value))
-            .ValueGeneratedNever();
+        builder.Property(document => document.Id).ValueGeneratedNever();
 
         builder.Property(document => document.FileName).HasMaxLength(260).IsRequired();
         builder.Property(document => document.ContentType).HasMaxLength(100).IsRequired();
@@ -22,7 +20,11 @@ internal sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.HasIndex(document => document.BlobName).IsUnique();
         builder.Property(document => document.Status).HasConversion<string>().HasMaxLength(30).IsRequired();
         builder.Property(document => document.UploadedAt).IsRequired();
+        builder.Property(document => document.ChunkCount);
+        builder.Property(document => document.ChunkedAt);
+        builder.Property(document => document.FailureReason).HasMaxLength(Document.MaxFailureReasonLength);
 
         builder.Ignore(document => document.DomainEvents);
+        builder.Ignore(document => document.CanBeChunked);
     }
 }

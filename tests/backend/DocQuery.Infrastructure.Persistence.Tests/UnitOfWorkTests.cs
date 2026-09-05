@@ -42,6 +42,35 @@ public sealed class UnitOfWorkTests(PostgresFixture postgres)
     }
 
     [DockerFact]
+    public async Task Marking_a_document_chunked_writes_a_document_chunked_outbox_message()
+    {
+        var document = Document.Upload("report.pdf", "application/pdf", 1234, UploadedAt);
+        document.ClearDomainEvents();
+        await using var services = postgres.CreateServices();
+        await using (var scope = services.CreateAsyncScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<IDocumentRepository>().AddAsync(document, CancellationToken.None);
+            await scope.ServiceProvider.GetRequiredService<IUnitOfWork>().SaveChangesAsync(CancellationToken.None);
+        }
+
+        await using (var scope = services.CreateAsyncScope())
+        {
+            var repository = scope.ServiceProvider.GetRequiredService<IDocumentRepository>();
+            var tracked = await repository.GetByIdAsync(document.Id, CancellationToken.None);
+            tracked!.MarkChunked(4, UploadedAt.AddMinutes(1));
+            await scope.ServiceProvider.GetRequiredService<IUnitOfWork>().SaveChangesAsync(CancellationToken.None);
+        }
+
+        await using var context = postgres.CreateContext();
+        var candidates = await context.OutboxMessages.Where(m => m.Type == typeof(DocumentChunked).FullName).ToListAsync();
+        var message = Assert.Single(candidates, m => m.Payload.Contains(document.Id.Value.ToString(), StringComparison.OrdinalIgnoreCase));
+        var contract = JsonSerializer.Deserialize<DocumentChunked>(message.Payload, OutboxMessage.SerializerOptions);
+        Assert.NotNull(contract);
+        Assert.Equal(4, contract.ChunkCount);
+        Assert.Equal(UploadedAt.AddMinutes(1), contract.ChunkedAt);
+    }
+
+    [DockerFact]
     public async Task Saving_fails_when_a_domain_event_has_no_mapper()
     {
         var document = Document.Upload("report.pdf", "application/pdf", 1234, UploadedAt);

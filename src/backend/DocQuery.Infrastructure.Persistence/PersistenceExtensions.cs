@@ -39,8 +39,10 @@ public static class PersistenceExtensions
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IDocumentRepository, DocumentRepository>();
+        services.AddScoped<IDocumentChunkRepository, DocumentChunkRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IIntegrationEventMapper, DocumentUploadedMapper>());
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IIntegrationEventMapper, DocumentChunkedMapper>());
 
         return services;
     }
