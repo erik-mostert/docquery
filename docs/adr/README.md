@@ -21,3 +21,4 @@ Template: [template.md](template.md)
 | [0012](0012-ef-core-postgresql-persistence-with-startup-migrations.md) | EF Core on PostgreSQL, migrations applied at startup, outbox table | Accepted |
 | [0013](0013-testcontainers-for-infrastructure-tests.md) | Testcontainers for infrastructure tests, skipped without Docker | Accepted |
 | [0014](0014-outbox-relay-worker-and-topic-subscriptions.md) | Outbox relay as its own worker, publishing to a topic with subscriptions | Accepted |
+| [0015](0015-chunking-worker-consumer-pattern-and-structure-aware-chunking.md) | Chunking worker: consumer pattern and structure-aware chunking | Accepted |

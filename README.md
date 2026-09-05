@@ -34,10 +34,11 @@ src/
     DocQuery.Domain/               entities, value objects, domain events
     DocQuery.Application/          commands, handlers, abstractions
     DocQuery.Contracts/            integration message contracts shared with workers
-    DocQuery.Infrastructure/       Azure Blob Storage and Service Bus adapters, resilience decorators
+    DocQuery.Infrastructure/       Blob Storage, Service Bus (publish and consume), PDF extraction, tokenizer
     DocQuery.Infrastructure.Persistence/  EF Core + PostgreSQL, migrations, outbox table and relay
     DocQuery.Command.Api/          write side: document upload
     DocQuery.Workers.OutboxRelay/  publishes outbox rows to Service Bus
+    DocQuery.Workers.Chunking/     consumes DocumentUploaded, extracts text, writes chunks
   clients/
     docquery.web/                  React + Vite UI
 tests/
@@ -49,9 +50,10 @@ tests/
     DocQuery.Infrastructure.Persistence.Tests/  PostgreSQL-backed tests (Docker)
     DocQuery.Command.Api.Tests/
     DocQuery.Workers.OutboxRelay.Tests/
+    DocQuery.Workers.Chunking.Tests/
 ```
 
-Further projects (chunking and embedding workers, query API, deployment manifests) are added as the solution grows.
+Further projects (embedding worker, query API, deployment manifests) are added as the solution grows.
 
 ## Command API
 
@@ -82,6 +84,21 @@ a time under `FOR UPDATE SKIP LOCKED`) and publishes each row to the Service Bus
 (`document-events`). Body is the JSON payload, `MessageId` the outbox id, `Subject` the contract type name.
 Failed rows record the error and attempt count and are retried on the next poll; delivery is at-least-once.
 Publishing goes through its own Polly pipeline under `Resilience:ServiceBus`. See ADR 0014.
+
+## Chunking worker
+
+`DocQuery.Workers.Chunking` (Aspire resource `chunking-worker`) consumes `DocumentUploaded` from the `chunking` subscription. It downloads the PDF,
+extracts text per page with PdfPig (layout blocks in reading order), splits it into chunks of at most
+`Chunking:MaxTokens` tokens (`o200k_base`, the Azure OpenAI encoding) and stores them in `document_chunks`. The
+document becomes `Chunked` and a `DocumentChunked` message goes through the outbox.
+
+Chunks respect structure: whole paragraphs and lists are packed together, a list is split only between items when
+it alone exceeds a chunk, sentences are the next boundary, and raw token windows are the last resort. Chunks never
+cross pages. Detection of lists is a heuristic over leading characters and layout; see ADR 0015 for the limits.
+
+Consumer conventions (shared by future workers): messages route by `Subject`; unknown subjects are completed and
+ignored; permanent failures (missing document or blob, unparseable PDF, no text) mark the document `Failed` and
+dead-letter the message with the reason; everything else is abandoned for redelivery, up to five attempts.
 
 The Service Bus emulator has no UI. To see what the relay published, peek the subscription (non-destructive)
 with the connection string shown on the `servicebus` resource in the dashboard:
