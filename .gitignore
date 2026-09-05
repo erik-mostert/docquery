@@ -480,3 +480,5 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+*.zip
+/CUAD_v1/CUAD_v1

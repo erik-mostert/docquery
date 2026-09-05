@@ -7,6 +7,9 @@ public sealed class Document : AggregateRoot
 {
     public const string PdfContentType = "application/pdf";
 
+    /// <summary>Column limit for <see cref="FailureReason"/>; longer reasons are truncated so a failure can always be recorded.</summary>
+    public const int MaxFailureReasonLength = 1000;
+
     private Document(
         DocumentId id,
         string fileName,
@@ -40,6 +43,15 @@ public sealed class Document : AggregateRoot
 
     public DateTimeOffset UploadedAt { get; }
 
+    public int? ChunkCount { get; private set; }
+
+    public DateTimeOffset? ChunkedAt { get; private set; }
+
+    public string? FailureReason { get; private set; }
+
+    /// <summary>Chunking is allowed for fresh uploads and for retries after a failure, never for documents already past chunking.</summary>
+    public bool CanBeChunked => Status is DocumentStatus.Uploaded or DocumentStatus.Failed;
+
     public static Document Upload(string fileName, string contentType, long sizeInBytes, DateTimeOffset uploadedAt)
     {
         if (string.IsNullOrWhiteSpace(fileName))
@@ -64,5 +76,36 @@ public sealed class Document : AggregateRoot
         document.Raise(new DocumentUploadedEvent(id, blobName, uploadedAt));
 
         return document;
+    }
+
+    public void MarkChunked(int chunkCount, DateTimeOffset chunkedAt)
+    {
+        if (!CanBeChunked)
+        {
+            throw new DomainException(FormattableString.Invariant($"A document in status {Status} cannot be chunked."));
+        }
+
+        if (chunkCount <= 0)
+        {
+            throw new DomainException("A chunked document must have at least one chunk.");
+        }
+
+        Status = DocumentStatus.Chunked;
+        ChunkCount = chunkCount;
+        ChunkedAt = chunkedAt;
+        FailureReason = null;
+
+        Raise(new DocumentChunkedEvent(Id, chunkCount, chunkedAt));
+    }
+
+    public void MarkFailed(string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new DomainException("A failure reason is required.");
+        }
+
+        Status = DocumentStatus.Failed;
+        FailureReason = reason.Length <= MaxFailureReasonLength ? reason : reason[..MaxFailureReasonLength];
     }
 }
