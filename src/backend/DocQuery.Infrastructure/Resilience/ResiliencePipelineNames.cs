@@ -6,4 +6,6 @@ public static class ResiliencePipelineNames
     public const string BlobStorage = "blob-storage";
 
     public const string ServiceBus = "service-bus";
+
+    public const string AzureOpenAI = "azure-openai";
 }

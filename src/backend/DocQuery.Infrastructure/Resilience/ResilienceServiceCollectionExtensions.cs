@@ -23,6 +23,10 @@ public static class ResilienceServiceCollectionExtensions
     public static IServiceCollection AddServiceBusResilience(this IServiceCollection services, IConfiguration configuration) =>
         services.AddConfiguredPipeline<ServiceBusResilienceOptions>(configuration, ResiliencePipelineNames.ServiceBus, ServiceBusResilienceOptions.SectionName);
 
+    /// <summary>Registers the <see cref="ResiliencePipelineNames.AzureOpenAI"/> pipeline from <c>Resilience:AzureOpenAI</c>.</summary>
+    public static IServiceCollection AddAzureOpenAIResilience(this IServiceCollection services, IConfiguration configuration) =>
+        services.AddConfiguredPipeline<AzureOpenAIResilienceOptions>(configuration, ResiliencePipelineNames.AzureOpenAI, AzureOpenAIResilienceOptions.SectionName);
+
     /// <summary>
     /// Binds <typeparamref name="TOptions"/> from <paramref name="sectionName"/> (validated at startup) and registers a
     /// pipeline of retry (exponential backoff with jitter) wrapping circuit breaker wrapping per-attempt timeout.
