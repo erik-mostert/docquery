@@ -6,6 +6,7 @@ using DocQuery.Application;
 using DocQuery.Command.Api.Options;
 using DocQuery.Command.Api.RateLimiting;
 using DocQuery.Infrastructure;
+using DocQuery.Infrastructure.Configuration;
 using DocQuery.Infrastructure.Persistence;
 
 namespace DocQuery.Command.Api;
@@ -16,6 +17,10 @@ public static class CommandApiHost
     public static WebApplicationBuilder ConfigureServices(WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+
+        // In Kubernetes the PostgreSQL connection string comes from Key Vault through workload identity (ADR 0021);
+        // locally the AppHost injects it and no vault URI is configured.
+        builder.AddKeyVaultSecretsIfConfigured();
 
         builder.AddServiceDefaults();
         builder.Services.AddOpenApi();

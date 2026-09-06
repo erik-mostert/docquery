@@ -1,5 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
+  <!-- dotnet publish /t:PublishContainer builds the image without a Dockerfile (ADR 0021). -->
+  <PropertyGroup>
+    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
+    <ContainerRepository>docquery/outbox-relay</ContainerRepository>
+  </PropertyGroup>
+
   <PropertyGroup>
     <UserSecretsId>docquery-workers-outboxrelay</UserSecretsId>
   </PropertyGroup>

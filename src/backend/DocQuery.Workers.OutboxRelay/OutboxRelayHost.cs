@@ -1,4 +1,5 @@
 using DocQuery.Infrastructure;
+using DocQuery.Infrastructure.Configuration;
 using DocQuery.Infrastructure.Persistence;
 using DocQuery.Infrastructure.Persistence.Outbox;
 
@@ -10,6 +11,10 @@ public static class OutboxRelayHost
     public static HostApplicationBuilder Configure(HostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+
+        // In Kubernetes the PostgreSQL connection string comes from Key Vault through workload identity (ADR 0021);
+        // locally the AppHost injects it and no vault URI is configured.
+        builder.AddKeyVaultSecretsIfConfigured();
 
         builder.AddServiceDefaults();
         builder.AddPersistence();

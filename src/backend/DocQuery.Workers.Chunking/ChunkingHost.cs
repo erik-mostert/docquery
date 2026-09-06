@@ -1,6 +1,7 @@
 using DocQuery.Application;
 using DocQuery.Application.Documents.Chunking;
 using DocQuery.Infrastructure;
+using DocQuery.Infrastructure.Configuration;
 using DocQuery.Infrastructure.Messaging;
 using DocQuery.Infrastructure.Pdf;
 using DocQuery.Infrastructure.Persistence;
@@ -14,6 +15,10 @@ public static class ChunkingHost
     public static HostApplicationBuilder Configure(HostApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+
+        // In Kubernetes the PostgreSQL connection string comes from Key Vault through workload identity (ADR 0021);
+        // locally the AppHost injects it and no vault URI is configured.
+        builder.AddKeyVaultSecretsIfConfigured();
 
         builder.AddServiceDefaults();
 
