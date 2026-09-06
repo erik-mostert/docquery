@@ -20,15 +20,38 @@ public sealed class ServiceBusEventBusTests(ServiceBusFixture serviceBus)
 
         await bus.PublishAsync(message, CancellationToken.None);
 
-        await using var receiver = client.CreateReceiver(ServiceBusFixture.Topic, ServiceBusFixture.Subscription);
-        var received = await receiver.ReceiveMessageAsync(TimeSpan.FromSeconds(30));
-        Assert.NotNull(received);
-        await receiver.CompleteMessageAsync(received);
+        var received = await ReceiveByIdAsync(client, message.MessageId.ToString());
 
         Assert.Equal(message.MessageId.ToString(), received.MessageId);
         Assert.Equal(message.Type, received.Subject);
         Assert.Equal("application/json", received.ContentType);
         Assert.Equal(message.Payload, received.Body.ToString());
         Assert.Equal(occurredAt, DateTimeOffset.Parse((string)received.ApplicationProperties[ServiceBusEventBus.OccurredAtProperty], CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>
+    /// The emulator's unfiltered subscription is shared by every messaging test, so messages from neighbouring tests
+    /// can be waiting or arrive first. Receive and complete until ours shows up, within a generous deadline.
+    /// </summary>
+    private static async Task<ServiceBusReceivedMessage> ReceiveByIdAsync(ServiceBusClient client, string messageId)
+    {
+        await using var receiver = client.CreateReceiver(ServiceBusFixture.Topic, ServiceBusFixture.Subscription);
+        var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(90);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            var candidate = await receiver.ReceiveMessageAsync(TimeSpan.FromSeconds(10));
+            if (candidate is null)
+            {
+                continue;
+            }
+
+            await receiver.CompleteMessageAsync(candidate);
+            if (candidate.MessageId == messageId)
+            {
+                return candidate;
+            }
+        }
+
+        throw new TimeoutException(FormattableString.Invariant($"Message {messageId} was not delivered in time."));
     }
 }
