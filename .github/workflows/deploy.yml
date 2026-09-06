@@ -1,0 +1,114 @@
+# Build and test on every push and pull request; deploy to AKS on pushes to main (ADR 0021).
+# Azure access uses OpenID Connect against the deploy identity created by infra/bicep (no stored credential):
+# set the repository secrets AZURE_CLIENT_ID (deployIdentityClientId output), AZURE_TENANT_ID and
+# AZURE_SUBSCRIPTION_ID, and the variable AZURE_RESOURCE_GROUP.
+name: Build, test and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Backend build and tests
+        run: |
+          dotnet build --nologo
+          dotnet test --no-build --nologo
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/clients/docquery.web/package-lock.json
+
+      - name: Frontend tests, lint, build and audit
+        working-directory: src/clients/docquery.web
+        run: |
+          npm ci
+          npm test
+          npm run lint
+          npm run build
+          npm audit --audit-level=low
+
+  deploy:
+    name: Deploy to AKS
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Read platform outputs
+        run: |
+          out() { az deployment group show -g "$RESOURCE_GROUP" -n main --query "properties.outputs.$1.value" -o tsv; }
+          {
+            echo "REGISTRY=$(out containerRegistryLoginServer)"
+            echo "REGISTRY_NAME=$(out containerRegistryName)"
+            echo "CLUSTER=$(out aksClusterName)"
+            echo "WORKLOAD_CLIENT_ID=$(out workloadIdentityClientId)"
+            echo "KEYVAULT_URI=$(out keyVaultUri)"
+            echo "BLOB_ENDPOINT=$(out blobEndpoint)"
+            echo "SERVICEBUS_HOST=$(out serviceBusHostName)"
+            echo "OPENAI_ENDPOINT=$(out openAiEndpoint)"
+          } >> "$GITHUB_ENV"
+
+      - name: Push .NET images
+        run: |
+          az acr login --name "$REGISTRY_NAME"
+          for project in DocQuery.Command.Api DocQuery.Query.Api DocQuery.Workers.OutboxRelay DocQuery.Workers.Chunking DocQuery.Workers.Embedding; do
+            dotnet publish "src/backend/$project" -c Release -t:PublishContainer \
+              -p:ContainerRegistry="$REGISTRY" -p:ContainerImageTag="$TAG" -p:ContainerRuntimeIdentifier=linux-x64 --nologo -v quiet
+          done
+
+      - name: Push web image
+        run: |
+          docker build -t "$REGISTRY/docquery/web:$TAG" src/clients/docquery.web
+          docker push "$REGISTRY/docquery/web:$TAG"
+
+      - name: Render overlay
+        working-directory: deploy/k8s/overlays/dev
+        run: |
+          sed -e "s|{{REGISTRY}}|$REGISTRY|g" -e "s|{{TAG}}|$TAG|g" -e "s|{{WORKLOAD_CLIENT_ID}}|$WORKLOAD_CLIENT_ID|g" \
+            kustomization.template.yaml > kustomization.yaml
+          sed -e "s|{{KEYVAULT_URI}}|$KEYVAULT_URI|g" -e "s|{{BLOB_ENDPOINT}}|$BLOB_ENDPOINT|g" \
+            -e "s|{{SERVICEBUS_HOST}}|$SERVICEBUS_HOST|g" -e "s|{{OPENAI_ENDPOINT}}|$OPENAI_ENDPOINT|g" \
+            dev.env.template > dev.env
+
+      - name: Apply manifests
+        run: |
+          az aks get-credentials -g "$RESOURCE_GROUP" -n "$CLUSTER" --admin --overwrite-existing
+          kubectl apply -k deploy/k8s/overlays/dev
+          for d in command-api query-api outbox-relay chunking-worker embedding-worker web; do
+            kubectl rollout status "deployment/$d" -n docquery --timeout=300s
+          done
+          echo "Ingress: http://$(kubectl get ingress docquery -n docquery -o jsonpath='{.status.loadBalancer.ingress[0].ip}')/"
