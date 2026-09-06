@@ -1,5 +1,6 @@
 using DocQuery.Application.Abstractions;
 using DocQuery.Application.Documents.Chunking;
+using DocQuery.Application.Documents.Embedding;
 using DocQuery.Application.Documents.Upload;
 using DocQuery.Application.Messaging;
 using DocQuery.Contracts.Documents;
@@ -32,6 +33,17 @@ public static class DependencyInjection
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddIntegrationMessageHandler<DocumentUploaded, DocumentUploadedHandler>();
+
+        return services;
+    }
+
+    /// <summary>Message handlers for the embedding worker; depends on an <c>IEmbeddingGenerator</c> the host provides.</summary>
+    public static IServiceCollection AddEmbedding(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddIntegrationMessageHandler<DocumentChunked, DocumentChunkedHandler>();
 
         return services;
     }
