@@ -41,7 +41,10 @@ endpoints, not secrets, and the workflow renders the same files.
 ## GitHub Actions
 
 The workflow authenticates with OpenID Connect against the deploy identity that `main.bicep` creates when
-`gitHubRepository` is set (federated for `refs/heads/main`). Configure the repository once:
+`gitHubRepository` is set. The federated credential must match the subject GitHub presents for the deploy job,
+`repo:<owner>@<ownerId>/<name>@<repoId>:environment:dev`, so the parameter file also carries `gitHubOwnerId` and
+`gitHubRepositoryId` (`gh api users/<owner> --jq .id`, `gh api repos/<owner>/<name> --jq .id`). A failed
+`azure/login` step prints the exact subject it presented. Configure the repository once:
 
 | Kind | Name | Value |
 |---|---|---|

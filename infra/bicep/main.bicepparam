@@ -24,4 +24,8 @@ param chatModel = {
 }
 
 // Lets the GitHub Actions workflow in .github/workflows deploy through OIDC (no stored credential). Empty skips it.
+// The ids are part of the token subject GitHub presents: gh api users/erik-mostert --jq .id, gh api repos/erik-mostert/docquery --jq .id
 param gitHubRepository = 'erik-mostert/docquery'
+param gitHubOwnerId = '45812744'
+param gitHubRepositoryId = '1357385689'
+param gitHubEnvironment = 'dev'

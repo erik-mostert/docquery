@@ -23,7 +23,7 @@ Deployment is two steps because of how secrets flow:
 | `bicep/modules/containerregistry.bicep` | Container registry (Basic, no admin user) |
 | `bicep/modules/aks.bicep` | AKS (free tier, one system pool) with OIDC issuer, workload identity, managed NGINX ingress and Container Insights; AcrPull for the kubelet |
 | `bicep/modules/workload-identity.bicep` | The identity the pods run as: federated with the cluster for the `docquery` service account; Key Vault Secrets User, Storage Blob Data Contributor, Service Bus Data Sender and Receiver, Cognitive Services OpenAI User |
-| `bicep/modules/deploy-identity.bicep` | The identity GitHub Actions deploys with (OIDC federation for `main`): AcrPush and AKS Cluster Admin. Skipped when `gitHubRepository` is empty |
+| `bicep/modules/deploy-identity.bicep` | The identity GitHub Actions deploys with (OIDC federation for the `dev` environment of the repository): Reader on the resource group, AcrPush and AKS Cluster Admin. Skipped when `gitHubRepository` is empty |
 | `bicep/modules/naming.bicep` | Name functions shared by both deployments |
 
 Secrets in the vault and the configuration keys they map to (the `--` convention):

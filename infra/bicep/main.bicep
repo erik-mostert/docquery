@@ -53,8 +53,15 @@ param aksNodeSize string = 'Standard_B2ms'
 @maxValue(10)
 param aksNodeCount int = 2
 
-@description('GitHub repository (owner/name) whose main branch may deploy through OIDC. Empty to skip the deploy identity.')
+@description('GitHub repository (owner/name) whose deploy job may sign in through OIDC. Empty to skip the deploy identity.')
 param gitHubRepository string = ''
+
+@description('Numeric ids GitHub embeds in the OIDC subject: gh api users/<owner> --jq .id and gh api repos/<owner>/<name> --jq .id.')
+param gitHubOwnerId string = ''
+param gitHubRepositoryId string = ''
+
+@description('GitHub environment the deploy job targets.')
+param gitHubEnvironment string = 'dev'
 
 @description('Tags applied to every resource.')
 param tags object = {
@@ -228,6 +235,9 @@ module deployIdentity 'modules/deploy-identity.bicep' = if (!empty(gitHubReposit
     tags: tags
     identityName: 'id-${environmentName}-deploy'
     gitHubRepository: gitHubRepository
+    gitHubOwnerId: gitHubOwnerId
+    gitHubRepositoryId: gitHubRepositoryId
+    gitHubEnvironment: gitHubEnvironment
     registryName: containerRegistry.outputs.registryName
     clusterName: aks.outputs.clusterName
   }
