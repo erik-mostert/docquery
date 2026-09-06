@@ -27,3 +27,4 @@ Template: [template.md](template.md)
 | [0018](0018-subscriptions-filter-on-message-subject.md) | Each subscription receives only its own message type through a correlation filter on Subject | Accepted |
 | [0019](0019-query-api-retrieval-augmented-answers.md) | Query API answers questions with retrieval-augmented generation over pgvector, citing passages | Accepted |
 | [0020](0020-react-ui-with-fetch-and-polling.md) | React UI talks to both APIs with fetch and polls for document progress | Accepted |
+| [0021](0021-aks-with-workload-identity-and-sdk-container-images.md) | AKS with workload identity, SDK-built container images and Kustomize manifests | Accepted |

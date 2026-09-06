@@ -25,6 +25,8 @@ This is a demonstration project. It deliberately omits concerns that any product
 
 ```
 DocQuery.slnx
+.github/workflows/                 build, test and deploy pipeline
+deploy/k8s/                        Kustomize manifests (base + dev overlay), deploy/scripts/deploy.ps1
 docs/adr/                          architecture decision records
 infra/bicep/                       Azure resources as Bicep modules (see infra/README.md)
 tools/                             single-file diagnostic programs (see tools/README.md)
@@ -59,7 +61,7 @@ tests/
     DocQuery.Workers.Embedding.Tests/
 ```
 
-Deployment manifests are added with the Kubernetes step.
+Deployment is described in [deploy/README.md](deploy/README.md).
 
 ## Command API
 
@@ -196,6 +198,17 @@ npm test
 
 `npm run build` type-checks and bundles; `npm run lint` runs oxlint; `npm audit` must report no known
 vulnerabilities before front-end changes are committed.
+
+## Deploy to AKS
+
+`infra/bicep` provisions a container registry, an AKS cluster (workload identity, managed NGINX ingress,
+Container Insights) and two managed identities: one the pods run as, one GitHub Actions deploys with. The five
+.NET hosts are published as images with `dotnet publish /t:PublishContainer` (no Dockerfiles); the web app has a
+small nginx Dockerfile. `deploy/k8s` holds Kustomize manifests; `deploy/scripts/deploy.ps1` builds, pushes and
+applies them from a workstation, and `.github/workflows/deploy.yml` does the same on every push to `main`. In the
+cluster the services reach Blob Storage, Service Bus and Azure OpenAI with the workload identity and read only
+the PostgreSQL connection string from Key Vault. Details and first-run steps: [deploy/README.md](deploy/README.md),
+ADR 0021.
 
 ## Build and test
 
