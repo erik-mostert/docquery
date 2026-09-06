@@ -12,6 +12,13 @@ param location = 'westeurope'
 param openAiLocation = 'westeurope'
 param postgresAdminLogin = 'docquery'
 param clientIpAddress = readEnvironmentVariable('CLIENT_IP', '')
-// The chat model is only needed by the query API. New subscriptions often start with zero quota for the newest
-// chat models; request quota in Azure AI Foundry (Quotas) and flip this to true when it is granted.
-param deployChatModel = false
+// The chat model is only needed by the query API. This subscription has no quota for the template's default
+// (gpt-5.4-mini) but 500K TPM Global Standard for gpt-5-mini, so that one is deployed. Check with
+// `az cognitiveservices usage list -l westeurope` or the Quota page in Azure AI Foundry (Show all).
+param deployChatModel = true
+param chatModel = {
+  name: 'gpt-5-mini'
+  version: '2025-08-07'
+  sku: 'GlobalStandard'
+  capacity: 10
+}
