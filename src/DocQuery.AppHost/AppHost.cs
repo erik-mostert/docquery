@@ -1,3 +1,6 @@
+using Aspire.Hosting.Azure;
+using DocQuery.Contracts.Documents;
+using DocQuery.Contracts.Messaging;
 using Microsoft.Extensions.Configuration;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -22,14 +25,14 @@ var postgres = builder.AddPostgres("postgres")
 var database = postgres.AddDatabase("docquery");
 
 // Azure Service Bus, run locally as the emulator (which brings its own SQL Edge sidecar). One topic carries every
-// document event; each worker owns a subscription (ADR 0014).
+// document event; each worker owns a subscription that only receives its own message type through a correlation
+// filter on Subject (ADR 0014, ADR 0018). The emulator reads this configuration when its container is created, so
+// after changing it remove the persistent servicebus containers (see README).
 var serviceBus = builder.AddAzureServiceBus("servicebus")
     .RunAsEmulator(emulator => emulator.WithLifetime(ContainerLifetime.Persistent));
 var documentEvents = serviceBus.AddServiceBusTopic("document-events");
-// Five delivery attempts before a message is dead-lettered; permanent failures are dead-lettered immediately.
-documentEvents.AddServiceBusSubscription("chunking").WithProperties(subscription => subscription.MaxDeliveryCount = 5);
-// Created ahead of the embedding worker so DocumentChunked messages are retained rather than dropped.
-documentEvents.AddServiceBusSubscription("embedding").WithProperties(subscription => subscription.MaxDeliveryCount = 5);
+documentEvents.AddServiceBusSubscription("chunking").WithProperties(subscription => ReceiveOnly(subscription, MessageSubject.Of<DocumentUploaded>()));
+documentEvents.AddServiceBusSubscription("embedding").WithProperties(subscription => ReceiveOnly(subscription, MessageSubject.Of<DocumentChunked>()));
 
 var commandApi = builder.AddProject<Projects.DocQuery_Command_Api>("command-api")
     .WithReference(documents).WaitFor(documents)
@@ -77,3 +80,15 @@ builder.AddViteApp("web", "../clients/docquery.web")
     .WithEnvironment("VITE_API_URL", commandApi.GetEndpoint("http"));
 
 builder.Build().Run();
+
+// Five delivery attempts before a message is dead-lettered; permanent failures are dead-lettered immediately.
+// With an explicit rule the emulator creates no catch-all rule, so only messages with this Subject are delivered.
+static void ReceiveOnly(AzureServiceBusSubscriptionResource subscription, string subject)
+{
+    subscription.MaxDeliveryCount = 5;
+    subscription.Rules.Add(new AzureServiceBusRule("subject")
+    {
+        FilterType = AzureServiceBusFilterType.CorrelationFilter,
+        CorrelationFilter = new AzureServiceBusCorrelationFilter { Subject = subject },
+    });
+}

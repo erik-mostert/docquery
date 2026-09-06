@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\backend\DocQuery.Contracts\DocQuery.Contracts.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="..\backend\DocQuery.Command.Api\DocQuery.Command.Api.csproj" />
     <ProjectReference Include="..\backend\DocQuery.Workers.Chunking\DocQuery.Workers.Chunking.csproj" />
     <ProjectReference Include="..\backend\DocQuery.Workers.Embedding\DocQuery.Workers.Embedding.csproj" />
