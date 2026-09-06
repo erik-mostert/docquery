@@ -1,32 +1,23 @@
-# React + TypeScript + Vite
+# docquery.web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Vite + React + TypeScript front end for DocQuery: upload PDFs, watch them get chunked and embedded, ask questions
+and read answers with citations. Design notes are in [ADR 0020](../../../docs/adr/0020-react-ui-with-fetch-and-polling.md).
 
-Currently, two official plugins are available:
+| Command | What it does |
+|---|---|
+| `npm run dev` | Dev server (port from `PORT`, else 5173; Aspire sets it) |
+| `npm test` | Vitest + Testing Library, once |
+| `npm run test:watch` | Same, watching |
+| `npm run build` | Type-check (`tsc -b`) and bundle to `dist/` |
+| `npm run lint` | oxlint |
+| `npm audit` | Must report zero known vulnerabilities before committing |
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Configuration comes from environment variables read at build/dev time:
 
-## React Compiler
+| Variable | Meaning | Default |
+|---|---|---|
+| `VITE_API_URL` | Command API base URL (uploads) | `http://localhost:5290` |
+| `VITE_QUERY_API_URL` | Query API base URL (documents, questions) | `http://localhost:5291` |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Layout: `src/api` (typed client, error mapping, context), `src/hooks` (document list with polling),
+`src/components` (upload form, document list, ask form, answer), `src/test` (setup and fakes).

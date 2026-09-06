@@ -175,6 +175,28 @@ Or with curl proper:
 curl -X POST http://localhost:5291/queries -H "Content-Type: application/json" -d "{\"question\": \"What is this document about?\"}"
 ```
 
+## Web UI
+
+`src/clients/docquery.web` (Aspire resource `web`) is a Vite React TypeScript app with one page: upload a PDF,
+watch it move from Uploaded to Chunked to Embedded, then ask a question and read the answer with its citations.
+It talks to the command API for uploads and to the query API for the document list and questions, using the URLs
+the AppHost passes in `VITE_API_URL` and `VITE_QUERY_API_URL`. While any document is still processing the list is
+polled every three seconds; idle, it makes no requests. See ADR 0020.
+
+The AppHost also tells both APIs which browser origin to allow (`Cors__AllowedOrigins__0` from the Vite endpoint),
+so the port Aspire picks for the dev server is always the one allowed. Outside Aspire the defaults in
+`appsettings.json` allow `http://localhost:5173`.
+
+Front-end tests use Vitest and Testing Library against a fake API client:
+
+```bash
+cd src/clients/docquery.web
+npm test
+```
+
+`npm run build` type-checks and bundles; `npm run lint` runs oxlint; `npm audit` must report no known
+vulnerabilities before front-end changes are committed.
+
 ## Build and test
 
 ```bash
@@ -203,7 +225,8 @@ port is pinned to 10000, so Azure Storage Explorer's built-in "Emulator - Defaul
 dotnet run --project src/DocQuery.AppHost
 ```
 
-The UI can also be run on its own:
+The UI can also be run on its own against APIs started separately (defaults: command API on 5290, query API on
+5291, dev server on 5173):
 
 ```bash
 cd src/clients/docquery.web
