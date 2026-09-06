@@ -1,6 +1,7 @@
 using DocQuery.Application.Abstractions;
 using DocQuery.Application.Documents.Chunking;
 using DocQuery.Application.Documents.Embedding;
+using DocQuery.Application.Documents.Listing;
 using DocQuery.Application.Documents.Querying;
 using DocQuery.Application.Documents.Upload;
 using DocQuery.Application.Messaging;
@@ -47,6 +48,8 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<IQueryHandler<AskQuestionQuery, AskQuestionResult>, AskQuestionHandler>();
+        services.AddScoped<IQueryHandler<ListDocumentsQuery, IReadOnlyList<DocumentSummary>>, ListDocumentsHandler>();
+        services.AddScoped<IQueryHandler<GetDocumentQuery, DocumentSummary?>, GetDocumentHandler>();
 
         return services;
     }

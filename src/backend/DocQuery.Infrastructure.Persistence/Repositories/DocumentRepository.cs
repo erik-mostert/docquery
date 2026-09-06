@@ -13,4 +13,12 @@ internal sealed class DocumentRepository(DocQueryDbContext context) : IDocumentR
 
     public Task<Document?> GetByIdAsync(DocumentId id, CancellationToken cancellationToken) =>
         context.Documents.SingleOrDefaultAsync(document => document.Id == id, cancellationToken);
+
+    public async Task<IReadOnlyList<Document>> ListAsync(int limit, CancellationToken cancellationToken) =>
+        await context.Documents
+            .AsNoTracking()
+            .OrderByDescending(document => document.UploadedAt)
+            .ThenByDescending(document => document.Id)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
 }

@@ -17,4 +17,7 @@ public sealed class InMemoryDocumentRepository : IDocumentRepository
 
     public Task<Document?> GetByIdAsync(DocumentId id, CancellationToken cancellationToken) =>
         Task.FromResult(_documents.FirstOrDefault(document => document.Id == id));
+
+    public Task<IReadOnlyList<Document>> ListAsync(int limit, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<Document>>(_documents.OrderByDescending(document => document.UploadedAt).Take(limit).ToList());
 }
