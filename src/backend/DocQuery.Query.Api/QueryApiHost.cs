@@ -7,6 +7,7 @@ using DocQuery.Application.Documents.Querying;
 using DocQuery.Infrastructure.AI;
 using DocQuery.Infrastructure.Configuration;
 using DocQuery.Infrastructure.Persistence;
+using DocQuery.Query.Api.ExceptionHandling;
 using DocQuery.Query.Api.RateLimiting;
 
 namespace DocQuery.Query.Api;
@@ -38,6 +39,7 @@ public static class QueryApiHost
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<DomainExceptionHandler>();
         builder.Services.AddExceptionHandler<BrokenCircuitExceptionHandler>();
+        builder.Services.AddExceptionHandler<AiServiceExceptionHandler>();
         builder.Services.AddClientRateLimitPolicy<QueryRateLimitOptions>(builder.Configuration, QueryRateLimitOptions.PolicyName, QueryRateLimitOptions.SectionName);
         builder.Services.AddApiCors(builder.Configuration);
         builder.Services.AddCommonEndpoints();
