@@ -37,6 +37,8 @@ public sealed class QueryApiFactory : WebApplicationFactory<Program>
 
     public FakeChunkSearch Search { get; } = new();
 
+    public InMemoryDocumentRepository Documents { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // UseSetting lands in host configuration before Program.cs runs. ConfigureAppConfiguration would be applied
@@ -56,6 +58,9 @@ public sealed class QueryApiFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<IChunkSearch>();
             services.AddSingleton<IChunkSearch>(Search);
+
+            services.RemoveAll<IDocumentRepository>();
+            services.AddSingleton<IDocumentRepository>(Documents);
 
             // Keep only the liveness self-check; dependency checks would try to reach the placeholders.
             services.PostConfigure<HealthCheckServiceOptions>(options =>
