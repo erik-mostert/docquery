@@ -42,7 +42,9 @@ resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
       name: embeddingModel.name
       version: embeddingModel.version
     }
-    versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
+    // Pinned: an automatic upgrade recreates the deployment and returns DeploymentNotFound for a while. Bump the
+    // version in the parameters and redeploy when a newer model version is wanted.
+    versionUpgradeOption: 'NoAutoUpgrade'
   }
 }
 
@@ -59,7 +61,9 @@ resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-1
       name: chatModel.name
       version: chatModel.version
     }
-    versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
+    // Pinned: an automatic upgrade recreates the deployment and returns DeploymentNotFound for a while. Bump the
+    // version in the parameters and redeploy when a newer model version is wanted.
+    versionUpgradeOption: 'NoAutoUpgrade'
   }
   dependsOn: [
     embeddingDeployment
