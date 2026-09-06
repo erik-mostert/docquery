@@ -1,0 +1,39 @@
+# One public entry point through the AKS application routing add-on (managed NGINX). The UI is served at / and the
+# APIs under /api/command and /api/query with the prefix stripped, so the browser talks to one origin.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: docquery
+  namespace: docquery
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # Uploads up to the command API's 50 MB limit; questions can take a while at the model.
+    nginx.ingress.kubernetes.io/proxy-body-size: 60m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+spec:
+  ingressClassName: webapprouting.kubernetes.azure.com
+  rules:
+    - http:
+        paths:
+          - path: /api/command(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: command-api
+                port:
+                  name: http
+          - path: /api/query(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: query-api
+                port:
+                  name: http
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: web
+                port:
+                  name: http

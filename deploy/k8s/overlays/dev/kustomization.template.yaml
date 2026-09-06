@@ -1,0 +1,41 @@
+# Template for the dev overlay. deploy/scripts/deploy.ps1 fills the placeholders from the Bicep outputs and writes
+# kustomization.yaml next to this file (committed: nothing here is secret). Secrets never appear in manifests; the
+# services read them from Key Vault with workload identity (ADR 0021).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: docquery
+resources:
+  - ../../base
+images:
+  - name: docquery/command-api
+    newName: {{REGISTRY}}/docquery/command-api
+    newTag: "{{TAG}}"
+  - name: docquery/query-api
+    newName: {{REGISTRY}}/docquery/query-api
+    newTag: "{{TAG}}"
+  - name: docquery/outbox-relay
+    newName: {{REGISTRY}}/docquery/outbox-relay
+    newTag: "{{TAG}}"
+  - name: docquery/chunking-worker
+    newName: {{REGISTRY}}/docquery/chunking-worker
+    newTag: "{{TAG}}"
+  - name: docquery/embedding-worker
+    newName: {{REGISTRY}}/docquery/embedding-worker
+    newTag: "{{TAG}}"
+  - name: docquery/web
+    newName: {{REGISTRY}}/docquery/web
+    newTag: "{{TAG}}"
+patches:
+  - target:
+      kind: ServiceAccount
+      name: docquery
+    patch: |-
+      - op: replace
+        path: /metadata/annotations/azure.workload.identity~1client-id
+        value: "{{WORKLOAD_CLIENT_ID}}"
+configMapGenerator:
+  - name: docquery-config
+    envs:
+      - dev.env
+generatorOptions:
+  disableNameSuffixHash: true

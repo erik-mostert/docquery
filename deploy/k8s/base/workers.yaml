@@ -1,0 +1,115 @@
+# Background workers: one Deployment each so they scale independently (ADR 0002). No HTTP port, so no probes; a
+# crashed host exits and Kubernetes restarts it. All three use workload identity for Service Bus and Blob Storage,
+# and Key Vault for the PostgreSQL connection string.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outbox-relay
+  namespace: docquery
+  labels:
+    app.kubernetes.io/name: outbox-relay
+    app.kubernetes.io/part-of: docquery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: outbox-relay
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: outbox-relay
+        app.kubernetes.io/part-of: docquery
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: docquery
+      containers:
+        - name: outbox-relay
+          image: docquery/outbox-relay:latest
+          envFrom:
+            - configMapRef:
+                name: docquery-config
+          env:
+            - name: DOTNET_ENVIRONMENT
+              value: Production
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chunking-worker
+  namespace: docquery
+  labels:
+    app.kubernetes.io/name: chunking-worker
+    app.kubernetes.io/part-of: docquery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: chunking-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: chunking-worker
+        app.kubernetes.io/part-of: docquery
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: docquery
+      containers:
+        - name: chunking-worker
+          image: docquery/chunking-worker:latest
+          envFrom:
+            - configMapRef:
+                name: docquery-config
+          env:
+            - name: DOTNET_ENVIRONMENT
+              value: Production
+            - name: BlobStorage__CreateContainerOnStartup
+              value: "false"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              memory: 768Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: embedding-worker
+  namespace: docquery
+  labels:
+    app.kubernetes.io/name: embedding-worker
+    app.kubernetes.io/part-of: docquery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: embedding-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: embedding-worker
+        app.kubernetes.io/part-of: docquery
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: docquery
+      containers:
+        - name: embedding-worker
+          image: docquery/embedding-worker:latest
+          envFrom:
+            - configMapRef:
+                name: docquery-config
+          env:
+            - name: DOTNET_ENVIRONMENT
+              value: Production
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 384Mi

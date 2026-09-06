@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: docquery
+---
+# Every pod runs as this service account. The dev overlay annotates it with the workload identity's client id;
+# AKS's workload identity webhook then injects the federated token the Azure SDKs pick up (ADR 0021).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: docquery
+  namespace: docquery
+  annotations:
+    azure.workload.identity/client-id: "00000000-0000-0000-0000-000000000000"
