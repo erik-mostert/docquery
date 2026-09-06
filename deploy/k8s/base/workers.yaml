@@ -1,6 +1,7 @@
 # Background workers: one Deployment each so they scale independently (ADR 0002). No HTTP port, so no probes; a
 # crashed host exits and Kubernetes restarts it. All three use workload identity for Service Bus and Blob Storage,
-# and Key Vault for the PostgreSQL connection string.
+# and Key Vault for the PostgreSQL connection string. Strategy Recreate: a single replica fed by a queue can pause
+# for a few seconds during a rollout, and it avoids needing room for two pods at once on a small node pool.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -11,6 +12,8 @@ metadata:
     app.kubernetes.io/part-of: docquery
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: outbox-relay
@@ -48,6 +51,8 @@ metadata:
     app.kubernetes.io/part-of: docquery
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: chunking-worker
@@ -72,7 +77,7 @@ spec:
               value: "false"
           resources:
             requests:
-              cpu: 200m
+              cpu: 100m
               memory: 256Mi
             limits:
               memory: 768Mi
@@ -87,6 +92,8 @@ metadata:
     app.kubernetes.io/part-of: docquery
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: embedding-worker
