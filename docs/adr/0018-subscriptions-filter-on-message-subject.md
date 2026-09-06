@@ -27,9 +27,9 @@ it consumes. The name is computed in one place, `MessageSubject` in `DocQuery.Co
 strings as literals, and `MessageSubjectTests` pins them so renaming a contract fails a test before it breaks a
 filter.
 
-In Azure, a subscription is created with a catch-all rule named `$Default`; the Bicep defines its rule under
-that name, replacing the catch-all. The emulator creates no catch-all when explicit rules are given, so the
-AppHost adds a single rule named `subject`.
+Both the Bicep and the AppHost declare a single rule named `subject`. Once a rule is declared, neither Azure nor
+the emulator keeps a catch-all rule on the subscription. (Declaring the rule under the name `$Default`, as some
+samples suggest, left the Azure subscriptions with no rule at all, which silently discards every message.)
 
 ## Consequences
 

@@ -55,12 +55,13 @@ resource topicSubscriptions 'Microsoft.ServiceBus/namespaces/topics/subscription
   }
 ]
 
-// Azure creates a catch-all "$Default" rule with every subscription; defining a rule of that name replaces it,
-// so only messages whose Subject (ARM: "label") matches reach the subscription.
+// One explicit correlation rule per subscription, matching on Subject (ARM: "label"). Declaring a rule through ARM
+// leaves the subscription without the catch-all "$Default" rule, so only matching messages get through. Naming
+// the rule "$Default" instead does not work: Azure ends up with no rule at all, which discards every message.
 resource subjectRules 'Microsoft.ServiceBus/namespaces/topics/subscriptions/rules@2024-01-01' = [
   for (subscription, index) in subscriptions: {
     parent: topicSubscriptions[index]
-    name: '$Default'
+    name: 'subject'
     properties: {
       filterType: 'CorrelationFilter'
       correlationFilter: {
