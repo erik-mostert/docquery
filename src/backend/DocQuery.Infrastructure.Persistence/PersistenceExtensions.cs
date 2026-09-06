@@ -1,6 +1,7 @@
 using DocQuery.Application.Abstractions;
 using DocQuery.Infrastructure.Persistence.Outbox;
 using DocQuery.Infrastructure.Persistence.Repositories;
+using DocQuery.Infrastructure.Persistence.Search;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,6 +45,7 @@ public static class PersistenceExtensions
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IDocumentChunkRepository, DocumentChunkRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IChunkSearch, ChunkSearch>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IIntegrationEventMapper, DocumentUploadedMapper>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IIntegrationEventMapper, DocumentChunkedMapper>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IIntegrationEventMapper, DocumentEmbeddedMapper>());
