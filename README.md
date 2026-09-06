@@ -35,11 +35,12 @@ src/
     DocQuery.Domain/               entities, value objects, domain events
     DocQuery.Application/          commands, handlers, abstractions
     DocQuery.Contracts/            integration message contracts shared with workers
-    DocQuery.Infrastructure/       Blob Storage, Service Bus (publish and consume), PDF extraction, tokenizer
+    DocQuery.Infrastructure/       Blob Storage, Service Bus (publish and consume), PDF extraction, tokenizer, Azure OpenAI
     DocQuery.Infrastructure.Persistence/  EF Core + PostgreSQL, migrations, outbox table and relay
     DocQuery.Command.Api/          write side: document upload
     DocQuery.Workers.OutboxRelay/  publishes outbox rows to Service Bus
     DocQuery.Workers.Chunking/     consumes DocumentUploaded, extracts text, writes chunks
+    DocQuery.Workers.Embedding/    consumes DocumentChunked, embeds chunks with Azure OpenAI
   clients/
     docquery.web/                  React + Vite UI
 tests/
@@ -52,9 +53,10 @@ tests/
     DocQuery.Command.Api.Tests/
     DocQuery.Workers.OutboxRelay.Tests/
     DocQuery.Workers.Chunking.Tests/
+    DocQuery.Workers.Embedding.Tests/
 ```
 
-Further projects (embedding worker, query API, deployment manifests) are added as the solution grows.
+Further projects (query API, deployment manifests) are added as the solution grows.
 
 ## Command API
 
@@ -100,6 +102,35 @@ cross pages. Detection of lists is a heuristic over leading characters and layou
 Consumer conventions (shared by future workers): messages route by `Subject`; unknown subjects are completed and
 ignored; permanent failures (missing document or blob, unparseable PDF, no text) mark the document `Failed` and
 dead-letter the message with the reason; everything else is abandoned for redelivery, up to five attempts.
+
+## Embedding worker
+
+`DocQuery.Workers.Embedding` (Aspire resource `embedding-worker`) consumes `DocumentChunked` from the `embedding`
+subscription, embeds every chunk without a vector with Azure OpenAI `text-embedding-3-small` (1536 dimensions,
+`Embedding:BatchSize` chunks per call) through `Microsoft.Extensions.AI`, stores the vectors in the
+`document_chunks.Embedding` pgvector column (HNSW cosine index), marks the document `Embedded` and raises
+`DocumentEmbedded` through the outbox. Calls to Azure OpenAI go through a Polly pipeline under
+`Resilience:AzureOpenAI`. See ADR 0017.
+
+Azure OpenAI has no emulator, so this worker needs a real deployment. Two ways to give it the connection string:
+
+- **Key Vault (recommended, matches the Bicep in `infra/`)**: store only the vault URI as an AppHost user secret;
+  the worker reads `ConnectionStrings--openai` from the vault through your `az login` identity. Connection strings
+  Aspire injects take precedence over the vault, so storage, messaging and the database stay on the emulators.
+
+  ```bash
+  dotnet user-secrets set "ConnectionStrings:keyvault" "https://<vault>.vault.azure.net/" --project src/DocQuery.AppHost
+  ```
+
+- **Direct**: put the connection string itself in AppHost user secrets.
+
+  ```bash
+  dotnet user-secrets set "ConnectionStrings:openai" "Endpoint=https://<resource>.openai.azure.com/;Key=<key>" --project src/DocQuery.AppHost
+  ```
+
+Without either, the rest of the stack still runs and the embedding worker stops at startup with a message naming
+the missing key. The opt-in live test `AzureOpenAIEmbeddingSmokeTests` runs when `DOCQUERY_OPENAI_CONNECTION` is
+set to a connection string.
 
 The Service Bus emulator has no UI. To see what the relay published, peek the subscription (non-destructive)
 with the connection string shown on the `servicebus` resource in the dashboard:
