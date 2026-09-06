@@ -10,4 +10,7 @@ public enum DocumentStatus
 
     /// <summary>Processing failed for a reason that will not go away by retrying; see <c>FailureReason</c>.</summary>
     Failed = 2,
+
+    /// <summary>Every chunk has an embedding; the document can be queried.</summary>
+    Embedded = 3,
 }

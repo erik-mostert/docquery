@@ -8,6 +8,12 @@ namespace DocQuery.Domain.Documents;
 /// </summary>
 public sealed class DocumentChunk
 {
+    /// <summary>
+    /// Size of every stored embedding, fixed by the model (text-embedding-3-small) and by the vector column. Changing
+    /// the model means a migration and re-embedding every chunk (ADR 0017).
+    /// </summary>
+    public const int EmbeddingDimensions = 1536;
+
     private DocumentChunk(DocumentChunkId id, DocumentId documentId, int position, int pageNumber, string text, int tokenCount)
     {
         Id = id;
@@ -32,6 +38,11 @@ public sealed class DocumentChunk
 
     public int TokenCount { get; }
 
+    /// <summary>The chunk's embedding, or null until the embedding worker has processed it.</summary>
+    public ReadOnlyMemory<float>? Embedding { get; private set; }
+
+    public bool HasEmbedding => Embedding is not null;
+
     public static DocumentChunk Create(DocumentId documentId, int position, int pageNumber, string text, int tokenCount)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -55,5 +66,16 @@ public sealed class DocumentChunk
         }
 
         return new DocumentChunk(DocumentChunkId.Create(), documentId, position, pageNumber, text, tokenCount);
+    }
+
+    public void SetEmbedding(ReadOnlyMemory<float> embedding)
+    {
+        if (embedding.Length != EmbeddingDimensions)
+        {
+            throw new DomainException(FormattableString.Invariant(
+                $"Embeddings must have {EmbeddingDimensions} dimensions; got {embedding.Length}."));
+        }
+
+        Embedding = embedding;
     }
 }

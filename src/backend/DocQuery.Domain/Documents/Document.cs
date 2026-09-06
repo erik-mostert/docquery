@@ -47,10 +47,15 @@ public sealed class Document : AggregateRoot
 
     public DateTimeOffset? ChunkedAt { get; private set; }
 
+    public DateTimeOffset? EmbeddedAt { get; private set; }
+
     public string? FailureReason { get; private set; }
 
     /// <summary>Chunking is allowed for fresh uploads and for retries after a failure, never for documents already past chunking.</summary>
     public bool CanBeChunked => Status is DocumentStatus.Uploaded or DocumentStatus.Failed;
+
+    /// <summary>Embedding needs chunks: a chunked document, or a failed one whose chunks survived the failure.</summary>
+    public bool CanBeEmbedded => Status == DocumentStatus.Chunked || (Status == DocumentStatus.Failed && ChunkCount > 0);
 
     public static Document Upload(string fileName, string contentType, long sizeInBytes, DateTimeOffset uploadedAt)
     {
@@ -96,6 +101,20 @@ public sealed class Document : AggregateRoot
         FailureReason = null;
 
         Raise(new DocumentChunkedEvent(Id, chunkCount, chunkedAt));
+    }
+
+    public void MarkEmbedded(DateTimeOffset embeddedAt)
+    {
+        if (!CanBeEmbedded)
+        {
+            throw new DomainException(FormattableString.Invariant($"A document in status {Status} cannot be embedded."));
+        }
+
+        Status = DocumentStatus.Embedded;
+        EmbeddedAt = embeddedAt;
+        FailureReason = null;
+
+        Raise(new DocumentEmbeddedEvent(Id, embeddedAt));
     }
 
     public void MarkFailed(string reason)
