@@ -65,19 +65,30 @@ var embeddingWorker = builder.AddProject<Projects.DocQuery_Workers_Embedding>("e
     .WithReference(serviceBus).WaitFor(serviceBus)
     .WaitFor(commandApi);
 
-if (keyVault is not null)
-{
-    embeddingWorker.WithReference(keyVault);
-}
+// Read side (ADR 0002): embeds the question, searches pgvector and asks the chat model for a grounded answer.
+// Waits for the command API because that applies the migrations. Same Azure OpenAI wiring as the embedding worker.
+var queryApi = builder.AddProject<Projects.DocQuery_Query_Api>("query-api")
+    .WithReference(database).WaitFor(database)
+    .WaitFor(commandApi);
 
-if (openAi is not null)
+foreach (var azureConsumer in new[] { embeddingWorker, queryApi })
 {
-    embeddingWorker.WithReference(openAi);
+    if (keyVault is not null)
+    {
+        azureConsumer.WithReference(keyVault);
+    }
+
+    if (openAi is not null)
+    {
+        azureConsumer.WithReference(openAi);
+    }
 }
 
 builder.AddViteApp("web", "../clients/docquery.web")
     .WithReference(commandApi)
-    .WithEnvironment("VITE_API_URL", commandApi.GetEndpoint("http"));
+    .WithReference(queryApi)
+    .WithEnvironment("VITE_API_URL", commandApi.GetEndpoint("http"))
+    .WithEnvironment("VITE_QUERY_API_URL", queryApi.GetEndpoint("http"));
 
 builder.Build().Run();
 
