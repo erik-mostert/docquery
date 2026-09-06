@@ -11,6 +11,7 @@
     <Project Path="src/backend/DocQuery.Domain/DocQuery.Domain.csproj" />
     <Project Path="src/backend/DocQuery.Infrastructure.Persistence/DocQuery.Infrastructure.Persistence.csproj" />
     <Project Path="src/backend/DocQuery.Infrastructure/DocQuery.Infrastructure.csproj" />
+    <Project Path="src/backend/DocQuery.Query.Api/DocQuery.Query.Api.csproj" />
     <Project Path="src/backend/DocQuery.Workers.Chunking/DocQuery.Workers.Chunking.csproj" />
     <Project Path="src/backend/DocQuery.Workers.Embedding/DocQuery.Workers.Embedding.csproj" />
     <Project Path="src/backend/DocQuery.Workers.OutboxRelay/DocQuery.Workers.OutboxRelay.csproj" />
@@ -22,6 +23,7 @@
     <Project Path="tests/backend/DocQuery.Domain.Tests/DocQuery.Domain.Tests.csproj" />
     <Project Path="tests/backend/DocQuery.Infrastructure.Persistence.Tests/DocQuery.Infrastructure.Persistence.Tests.csproj" />
     <Project Path="tests/backend/DocQuery.Infrastructure.Tests/DocQuery.Infrastructure.Tests.csproj" />
+    <Project Path="tests/backend/DocQuery.Query.Api.Tests/DocQuery.Query.Api.Tests.csproj" />
     <Project Path="tests/backend/DocQuery.Tests.Common/DocQuery.Tests.Common.csproj" />
     <Project Path="tests/backend/DocQuery.Workers.Chunking.Tests/DocQuery.Workers.Chunking.Tests.csproj" />
     <Project Path="tests/backend/DocQuery.Workers.Embedding.Tests/DocQuery.Workers.Embedding.Tests.csproj" />

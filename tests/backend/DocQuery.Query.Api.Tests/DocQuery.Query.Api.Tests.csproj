@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\backend\DocQuery.Query.Api\DocQuery.Query.Api.csproj" />
+    <ProjectReference Include="..\DocQuery.Tests.Common\DocQuery.Tests.Common.csproj" />
+  </ItemGroup>
+
+</Project>
