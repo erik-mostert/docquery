@@ -1,4 +1,5 @@
 using DocQuery.Application.Abstractions;
+using DocQuery.Contracts.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DocQuery.Application.Messaging;
@@ -14,7 +15,7 @@ public static class MessageHandlerServiceCollectionExtensions
 
         services.AddScoped<IIntegrationMessageHandler<TMessage>, THandler>();
         services.AddSingleton(new MessageRoute(
-            typeof(TMessage).FullName ?? typeof(TMessage).Name,
+            MessageSubject.Of<TMessage>(),
             typeof(TMessage),
             static (provider, message, cancellationToken) =>
                 provider.GetRequiredService<IIntegrationMessageHandler<TMessage>>().HandleAsync((TMessage)message, cancellationToken)));

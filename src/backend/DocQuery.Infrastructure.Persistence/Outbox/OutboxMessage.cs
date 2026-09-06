@@ -1,3 +1,4 @@
+using DocQuery.Contracts.Messaging;
 using System.Text.Json;
 using DocQuery.Application.Messaging;
 using DocQuery.Contracts;
@@ -42,7 +43,7 @@ public sealed class OutboxMessage
         return new OutboxMessage
         {
             Id = Guid.CreateVersion7(),
-            Type = type.FullName ?? type.Name,
+            Type = MessageSubject.Of(type),
             Payload = JsonSerializer.Serialize(message, type, SerializerOptions),
             OccurredAt = occurredAt,
         };
