@@ -158,7 +158,9 @@ API, the outbox relay worker and the Vite dev server together and opens a dashbo
 metrics. Docker Desktop must be running for the emulators; the first start pulls several images. Azurite and
 PostgreSQL use named Docker volumes and all emulators keep a persistent container lifetime, so uploaded documents
 and database rows survive between sessions and migrations run only once. To start clean, stop Aspire and remove the `docquery` containers
-and volumes (`docker ps -a`, `docker volume ls`). The generated PostgreSQL password lives in the AppHost user
+and volumes (`docker ps -a`, `docker volume ls`). The Service Bus emulator reads its topics, subscriptions and
+filters only when its container is created, so after changing them in the AppHost remove the `servicebus`
+containers (`docker rm -f $(docker ps -aq --filter "name=servicebus")`) and start Aspire again. The generated PostgreSQL password lives in the AppHost user
 secrets, so pgAdmin can connect with the credentials shown on the resource in the dashboard. Azurite's blob
 port is pinned to 10000, so Azure Storage Explorer's built-in "Emulator - Default Ports" connection shows the
 `documents` container without any configuration.

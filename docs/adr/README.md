@@ -24,3 +24,4 @@ Template: [template.md](template.md)
 | [0015](0015-chunking-worker-consumer-pattern-and-structure-aware-chunking.md) | Chunking worker: consumer pattern and structure-aware chunking | Accepted |
 | [0016](0016-azure-resources-defined-in-bicep.md) | Azure resources are defined in Bicep, one module per service, with secrets in Key Vault | Accepted |
 | [0017](0017-embeddings-with-azure-openai-and-pgvector.md) | Embeddings with Azure OpenAI through Microsoft.Extensions.AI, stored in pgvector | Accepted |
+| [0018](0018-subscriptions-filter-on-message-subject.md) | Each subscription receives only its own message type through a correlation filter on Subject | Accepted |
