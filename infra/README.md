@@ -1,8 +1,7 @@
 # Infrastructure
 
 Bicep templates for the Azure resources DocQuery uses. One resource group holds everything; the templates are
-idempotent, so re-running a deployment applies changes in place. AKS and the container registry arrive with the
-Kubernetes step and will be added here.
+idempotent, so re-running a deployment applies changes in place.
 
 Deployment is two steps because of how secrets flow:
 
@@ -21,6 +20,10 @@ Deployment is two steps because of how secrets flow:
 | `bicep/modules/postgres.bicep` | PostgreSQL Flexible Server (B1ms, 32 GB), `vector` extension allow-listed, `docquery` database, firewall rules |
 | `bicep/modules/openai.bicep` | Azure OpenAI account with an embedding deployment (`text-embedding-3-small`) and a chat deployment (`gpt-5.4-mini`), both Global Standard; model, version and SKU are parameters of `main.bicep` |
 | `bicep/modules/keyvault-secrets.bicep` | Writes the connection strings below into the vault |
+| `bicep/modules/containerregistry.bicep` | Container registry (Basic, no admin user) |
+| `bicep/modules/aks.bicep` | AKS (free tier, one system pool) with OIDC issuer, workload identity, managed NGINX ingress and Container Insights; AcrPull for the kubelet |
+| `bicep/modules/workload-identity.bicep` | The identity the pods run as: federated with the cluster for the `docquery` service account; Key Vault Secrets User, Storage Blob Data Contributor, Service Bus Data Sender and Receiver, Cognitive Services OpenAI User |
+| `bicep/modules/deploy-identity.bicep` | The identity GitHub Actions deploys with (OIDC federation for `main`): AcrPush and AKS Cluster Admin. Skipped when `gitHubRepository` is empty |
 | `bicep/modules/naming.bicep` | Name functions shared by both deployments |
 
 Secrets in the vault and the configuration keys they map to (the `--` convention):
@@ -38,6 +41,11 @@ Secrets in the vault and the configuration keys they map to (the `--` convention
 
 - Azure CLI 2.60+ with Bicep (`az bicep install`), logged in (`az login`) to the target subscription.
 - Azure OpenAI access enabled on the subscription and quota in the chosen region.
+- Resource providers registered once per subscription (AKS with Container Insights needs all of them):
+
+  ```powershell
+  foreach ($ns in 'Microsoft.OperationsManagement', 'Microsoft.OperationalInsights', 'Microsoft.ContainerService', 'Microsoft.ContainerRegistry', 'Microsoft.ManagedIdentity') { az provider register --namespace $ns --wait }
+  ```
 - Resource names are `<prefix>-<environmentName>-<8-char hash of the resource group id>`, e.g. `kv-docqry-dev-abc12def`, so they are stable across
   deployments and globally unique; both parameter files must use the same `environmentName` (12 characters at most).
 
@@ -75,6 +83,10 @@ az deployment group what-if --resource-group $rg --template-file infra/bicep/mai
 If the OpenAI deployment fails with a model-availability or quota error, set `openAiLocation` in
 `main.bicepparam` to a region that has the models (for example `swedencentral`); everything else stays put.
 
+Outputs the Kubernetes step uses (`containerRegistryLoginServer`, `aksClusterName`, `workloadIdentityClientId`,
+`deployIdentityClientId`) are read by `deploy/scripts/deploy.ps1` and the GitHub workflow; see
+[deploy/README.md](../deploy/README.md) for the repository secrets the workflow needs.
+
 ## After deployment: connecting the local services
 
 Only the vault URI is needed locally; every secret comes from Key Vault through your `az login` identity. Store
@@ -100,9 +112,11 @@ applies it to the server and rewrites `ConnectionStrings--docquery`. Running ser
 
 ## Cost and teardown
 
-Standing cost is dominated by PostgreSQL B1ms and the Service Bus Standard base charge (roughly tens of euros a
-month combined); OpenAI is pay-per-token and idle deployments cost nothing on Standard tiers; Key Vault is
-negligible. Remove everything with:
+Standing cost is dominated by the AKS node pool (two `Standard_B2ms` nodes by default, `aksNodeCount` and
+`aksNodeSize` in `main.bicep`), PostgreSQL B1ms and the Service Bus Standard base charge; OpenAI is pay-per-token
+and idle deployments cost nothing on Standard tiers; the registry, Key Vault and the free AKS control plane are
+negligible. Stop the cluster between demos with `az aks stop -g $rg -n <cluster>` (nodes are deallocated, the
+public IP is kept) and `az aks start` to resume. Remove everything with:
 
 ```powershell
 az group delete --name $rg --yes --no-wait
@@ -114,7 +128,8 @@ az keyvault purge --name $vault    # soft-deleted vaults keep their name reserve
 - One module per service; `main.bicep` only wires names, tags, parameters and the secrets module.
 - Human-provided secrets live in Key Vault before the platform is deployed and are read with `getSecret()`;
   resource-generated keys are written to the vault by the deployment. Templates never output secrets.
-- Local auth (keys, SAS, passwords) is enabled for the development environment. The Kubernetes step switches
-  services to managed identities and disables local auth where possible; Key Vault access then goes through
-  workload identity with the Secrets User role instead of a personal assignment.
+- Local auth (keys, SAS, passwords) stays enabled so the key-based connection strings in the vault keep working
+  for local runs. In the cluster the services use the workload identity for Blob Storage, Service Bus and Azure
+  OpenAI and read only the PostgreSQL connection string from the vault (ADR 0021); disabling local auth on those
+  resources is a follow-up once nothing else uses the keys.
 - API versions are pinned; bump deliberately and re-run `az bicep build` to catch schema changes.

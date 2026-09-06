@@ -1,5 +1,5 @@
 // Step 2 of 2: the DocQuery platform, deployed into one resource group after bootstrap.bicep created the Key Vault
-// and the PostgreSQL password was placed in it. AKS and the container registry are added with the Kubernetes step.
+// and the PostgreSQL password was placed in it. Includes the AKS cluster and container registry (ADR 0021).
 //
 //   az deployment group create --resource-group rg-docquery-dev --template-file main.bicep --parameters main.bicepparam
 //
@@ -46,6 +46,16 @@ param chatModel object = {
   capacity: 10
 }
 
+@description('VM size of the AKS system node pool (at least 2 vCPUs and 4 GB).')
+param aksNodeSize string = 'Standard_B2ms'
+
+@minValue(1)
+@maxValue(10)
+param aksNodeCount int = 2
+
+@description('GitHub repository (owner/name) whose main branch may deploy through OIDC. Empty to skip the deploy identity.')
+param gitHubRepository string = ''
+
 @description('Tags applied to every resource.')
 param tags object = {
   project: 'docquery'
@@ -60,6 +70,8 @@ var vaultName = keyVaultName(environmentName, token)
 var storageAccountName = storageName(environmentName, token)
 var serviceBusNamespaceName = 'sb-${environmentName}-${token}'
 var openAiAccountName = 'oai-${environmentName}-${token}'
+// Registry names: 5-50 alphanumerics, globally unique.
+var containerRegistryName = 'cr${replace(environmentName, '-', '')}${token}'
 var documentsContainerName = 'documents'
 
 // Created by bootstrap.bicep; holds the human-provided password and receives the generated secrets.
@@ -171,6 +183,56 @@ module keyVaultSecrets 'modules/keyvault-secrets.bicep' = {
   }
 }
 
+// Kubernetes (ADR 0021): registry, cluster, the identity the pods run as and the identity GitHub deploys with.
+module containerRegistry 'modules/containerregistry.bicep' = {
+  name: 'containerregistry'
+  params: {
+    location: location
+    tags: tags
+    #disable-next-line BCP334
+    registryName: containerRegistryName
+  }
+}
+
+module aks 'modules/aks.bicep' = {
+  name: 'aks'
+  params: {
+    location: location
+    tags: tags
+    clusterName: 'aks-${environmentName}-${token}'
+    registryName: containerRegistry.outputs.registryName
+    logAnalyticsWorkspaceId: monitoring.outputs.workspaceId
+    nodeSize: aksNodeSize
+    nodeCount: aksNodeCount
+  }
+}
+
+module workloadIdentity 'modules/workload-identity.bicep' = {
+  name: 'workload-identity'
+  params: {
+    location: location
+    tags: tags
+    identityName: 'id-${environmentName}-workload'
+    oidcIssuerUrl: aks.outputs.oidcIssuerUrl
+    vaultName: vaultName
+    storageAccountName: storage.outputs.storageAccountName
+    serviceBusNamespaceName: serviceBus.outputs.namespaceName
+    openAiAccountName: openAi.outputs.accountName
+  }
+}
+
+module deployIdentity 'modules/deploy-identity.bicep' = if (!empty(gitHubRepository)) {
+  name: 'deploy-identity'
+  params: {
+    location: location
+    tags: tags
+    identityName: 'id-${environmentName}-deploy'
+    gitHubRepository: gitHubRepository
+    registryName: containerRegistry.outputs.registryName
+    clusterName: aks.outputs.clusterName
+  }
+}
+
 // Non-secret outputs only. Every secret lives in Key Vault.
 output keyVaultName string = vaultName
 output keyVaultUri string = keyVault.properties.vaultUri
@@ -187,3 +249,8 @@ output openAiEndpoint string = openAi.outputs.endpoint
 output embeddingDeploymentName string = openAi.outputs.embeddingDeploymentName
 output chatDeploymentName string = openAi.outputs.chatDeploymentName
 output logAnalyticsWorkspaceId string = monitoring.outputs.workspaceId
+output containerRegistryName string = containerRegistry.outputs.registryName
+output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
+output aksClusterName string = aks.outputs.clusterName
+output workloadIdentityClientId string = workloadIdentity.outputs.clientId
+output deployIdentityClientId string = empty(gitHubRepository) ? '' : deployIdentity!.outputs.clientId

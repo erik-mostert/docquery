@@ -22,3 +22,6 @@ param chatModel = {
   sku: 'GlobalStandard'
   capacity: 10
 }
+
+// Lets the GitHub Actions workflow in .github/workflows deploy through OIDC (no stored credential). Empty skips it.
+param gitHubRepository = 'erik-mostert/docquery'
