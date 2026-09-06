@@ -95,9 +95,10 @@ module serviceBus 'modules/servicebus.bicep' = {
     tags: tags
     namespaceName: serviceBusNamespaceName
     topicName: 'document-events'
-    subscriptionNames: [
-      'chunking'
-      'embedding'
+    // Subject = contract type full name (MessageSubject in DocQuery.Contracts); MessageSubjectTests pins these.
+    subscriptions: [
+      { name: 'chunking', subject: 'DocQuery.Contracts.Documents.DocumentUploaded' }
+      { name: 'embedding', subject: 'DocQuery.Contracts.Documents.DocumentChunked' }
     ]
     maxDeliveryCount: 5
   }
