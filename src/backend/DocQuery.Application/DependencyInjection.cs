@@ -1,6 +1,7 @@
 using DocQuery.Application.Abstractions;
 using DocQuery.Application.Documents.Chunking;
 using DocQuery.Application.Documents.Embedding;
+using DocQuery.Application.Documents.Querying;
 using DocQuery.Application.Documents.Upload;
 using DocQuery.Application.Messaging;
 using DocQuery.Contracts.Documents;
@@ -33,6 +34,19 @@ public static class DependencyInjection
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddIntegrationMessageHandler<DocumentUploaded, DocumentUploadedHandler>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Query handlers for the read API; depends on an <c>IEmbeddingGenerator</c>, an <c>IChatClient</c> and an
+    /// <c>IChunkSearch</c> the host provides. <see cref="QueryOptions"/> is bound by the host.
+    /// </summary>
+    public static IServiceCollection AddQuerying(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.AddScoped<IQueryHandler<AskQuestionQuery, AskQuestionResult>, AskQuestionHandler>();
 
         return services;
     }
