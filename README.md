@@ -26,6 +26,7 @@ This is a demonstration project. It deliberately omits concerns that any product
 ```
 DocQuery.slnx
 docs/adr/                          architecture decision records
+infra/bicep/                       Azure resources as Bicep modules (see infra/README.md)
 tools/                             single-file diagnostic programs (see tools/README.md)
 src/
   DocQuery.AppHost/                Aspire orchestration for local runs
