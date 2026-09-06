@@ -4,6 +4,6 @@
 //
 using 'bootstrap.bicep'
 
-param environmentName = 'docquery-dev'
+param environmentName = 'docqry-dev'
 param location = 'westeurope'
 param keyVaultAdministratorPrincipalId = readEnvironmentVariable('KEYVAULT_ADMIN_OBJECT_ID', '')

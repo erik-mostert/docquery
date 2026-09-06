@@ -8,11 +8,11 @@
 
 targetScope = 'resourceGroup'
 
-import { resourceToken, keyVaultName, postgresAdminPasswordSecretName } from 'modules/naming.bicep'
+import { resourceToken, keyVaultName, storageName, postgresAdminPasswordSecretName } from 'modules/naming.bicep'
 
-@description('Short environment name used in resource names, e.g. docquery-dev. Must match bootstrap.bicep.')
+@description('Short environment name used in resource names, e.g. docqry-dev (12 characters at most so every derived name fits its limit). Must match bootstrap.bicep.')
 @minLength(3)
-@maxLength(24)
+@maxLength(12)
 param environmentName string
 
 @description('Region for everything except Azure OpenAI.')
@@ -52,8 +52,7 @@ var token = resourceToken(resourceGroup().id)
 // Names are computed here (not taken from module outputs) so the existing-resource references below can call
 // listKeys() and getSecret() at deployment start.
 var vaultName = keyVaultName(environmentName, token)
-// uniqueString() always yields 13 characters, so this is 15+ characters; the compiler cannot infer that (BCP334).
-var storageAccountName = 'st${replace(environmentName, '-', '')}${token}'
+var storageAccountName = storageName(environmentName, token)
 var serviceBusNamespaceName = 'sb-${environmentName}-${token}'
 var openAiAccountName = 'oai-${environmentName}-${token}'
 var documentsContainerName = 'documents'

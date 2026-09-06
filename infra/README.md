@@ -38,8 +38,8 @@ Secrets in the vault and the configuration keys they map to (the `--` convention
 
 - Azure CLI 2.60+ with Bicep (`az bicep install`), logged in (`az login`) to the target subscription.
 - Azure OpenAI access enabled on the subscription and quota in the chosen region.
-- Resource names derive from `environmentName` plus a hash of the resource group id, so they are stable across
-  deployments and globally unique; both parameter files must use the same `environmentName`.
+- Resource names are `<prefix>-<environmentName>-<8-char hash of the resource group id>`, e.g. `kv-docqry-dev-abc12def`, so they are stable across
+  deployments and globally unique; both parameter files must use the same `environmentName` (12 characters at most).
 
 ## Deploy
 

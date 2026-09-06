@@ -8,9 +8,9 @@ targetScope = 'resourceGroup'
 
 import { resourceToken, keyVaultName } from 'modules/naming.bicep'
 
-@description('Short environment name used in resource names, e.g. docquery-dev. Must match main.bicep.')
+@description('Short environment name used in resource names, e.g. docqry-dev (12 characters at most so every derived name fits its limit). Must match main.bicep.')
 @minLength(3)
-@maxLength(24)
+@maxLength(12)
 param environmentName string
 
 param location string = resourceGroup().location

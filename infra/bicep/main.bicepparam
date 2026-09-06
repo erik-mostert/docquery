@@ -5,7 +5,7 @@
 //
 using 'main.bicep'
 
-param environmentName = 'docquery-dev'
+param environmentName = 'docqry-dev'
 param location = 'westeurope'
 // Azure OpenAI model availability varies by region; point this elsewhere (e.g. swedencentral) if a deployment
 // fails with a "model not available" error.
