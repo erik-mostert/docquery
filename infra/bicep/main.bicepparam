@@ -12,3 +12,6 @@ param location = 'westeurope'
 param openAiLocation = 'westeurope'
 param postgresAdminLogin = 'docquery'
 param clientIpAddress = readEnvironmentVariable('CLIENT_IP', '')
+// The chat model is only needed by the query API. New subscriptions often start with zero quota for the newest
+// chat models; request quota in Azure AI Foundry (Quotas) and flip this to true when it is granted.
+param deployChatModel = false

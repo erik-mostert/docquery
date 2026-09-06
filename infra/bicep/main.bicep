@@ -27,17 +27,22 @@ param postgresAdminLogin string = 'docquery'
 @description('Optional public IP allowed through the PostgreSQL firewall for local tooling (pgAdmin). Empty to skip.')
 param clientIpAddress string = ''
 
-@description('Embedding model deployment.')
+@description('Embedding model deployment. Which SKUs a region offers changes over time; check with `az cognitiveservices model list -l <region>`.')
 param embeddingModel object = {
   name: 'text-embedding-3-small'
   version: '1'
+  sku: 'GlobalStandard'
   capacity: 50
 }
 
-@description('Chat model deployment for the RAG query step.')
+@description('Whether to create the chat deployment. Only the query API needs it; set false while the subscription has no quota for the chat model.')
+param deployChatModel bool = true
+
+@description('Chat model deployment for the RAG query step. Models retire; list current ones with `az cognitiveservices model list -l <region>`.')
 param chatModel object = {
-  name: 'gpt-4o-mini'
-  version: '2024-07-18'
+  name: 'gpt-5.4-mini'
+  version: '2026-03-17'
+  sku: 'GlobalStandard'
   capacity: 10
 }
 
@@ -118,6 +123,7 @@ module openAi 'modules/openai.bicep' = {
     tags: tags
     accountName: openAiAccountName
     embeddingModel: embeddingModel
+    deployChatModel: deployChatModel
     chatModel: chatModel
   }
 }

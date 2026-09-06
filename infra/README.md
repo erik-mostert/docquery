@@ -19,7 +19,7 @@ Deployment is two steps because of how secrets flow:
 | `bicep/modules/storage.bicep` | Storage account (LRS, TLS 1.2, no public blobs), `documents` container, soft delete and change feed on |
 | `bicep/modules/servicebus.bicep` | Service Bus namespace (Standard), topic `document-events` with duplicate detection, subscriptions `chunking` and `embedding` (5 deliveries, dead-letter on expiry) |
 | `bicep/modules/postgres.bicep` | PostgreSQL Flexible Server (B1ms, 32 GB), `vector` extension allow-listed, `docquery` database, firewall rules |
-| `bicep/modules/openai.bicep` | Azure OpenAI account with `text-embedding-3-small` (Standard) and `gpt-4o-mini` (Global Standard) deployments |
+| `bicep/modules/openai.bicep` | Azure OpenAI account with an embedding deployment (`text-embedding-3-small`) and a chat deployment (`gpt-5.4-mini`), both Global Standard; model, version and SKU are parameters of `main.bicep` |
 | `bicep/modules/keyvault-secrets.bicep` | Writes the connection strings below into the vault |
 | `bicep/modules/naming.bicep` | Name functions shared by both deployments |
 

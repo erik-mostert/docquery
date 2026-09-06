@@ -5,10 +5,13 @@ param location string
 param tags object
 param accountName string
 
-@description('{ name, version, capacity } of the embedding model; capacity is thousands of tokens per minute.')
+@description('{ name, version, sku, capacity } of the embedding model; capacity is thousands of tokens per minute.')
 param embeddingModel object
 
-@description('{ name, version, capacity } of the chat model.')
+@description('Whether to create the chat deployment (only the query API uses it).')
+param deployChatModel bool
+
+@description('{ name, version, sku, capacity } of the chat model.')
 param chatModel object
 
 resource account 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
@@ -30,7 +33,7 @@ resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   parent: account
   name: embeddingModel.name
   sku: {
-    name: 'Standard'
+    name: embeddingModel.sku
     capacity: embeddingModel.capacity
   }
   properties: {
@@ -43,11 +46,11 @@ resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   }
 }
 
-resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = {
+resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01' = if (deployChatModel) {
   parent: account
   name: chatModel.name
   sku: {
-    name: 'GlobalStandard'
+    name: chatModel.sku
     capacity: chatModel.capacity
   }
   properties: {
@@ -66,4 +69,4 @@ resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-1
 output accountName string = account.name
 output endpoint string = account.properties.endpoint
 output embeddingDeploymentName string = embeddingDeployment.name
-output chatDeploymentName string = chatDeployment.name
+output chatDeploymentName string = deployChatModel ? chatModel.name : ''
