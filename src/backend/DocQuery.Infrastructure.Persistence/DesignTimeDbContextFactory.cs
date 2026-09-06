@@ -9,7 +9,7 @@ internal sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<D
     public DocQueryDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<DocQueryDbContext>()
-            .UseNpgsql("Host=localhost;Database=docquery;Username=postgres;Password=design-time-only")
+            .UseNpgsql("Host=localhost;Database=docquery;Username=postgres;Password=design-time-only", npgsql => npgsql.UseVector())
             .Options;
 
         return new DocQueryDbContext(options);

@@ -1,6 +1,7 @@
 using DocQuery.Application.Abstractions;
 using DocQuery.Infrastructure.Persistence.Outbox;
 using DocQuery.Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -20,7 +21,9 @@ public static class PersistenceExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.AddNpgsqlDbContext<DocQueryDbContext>(connectionName);
+        builder.AddNpgsqlDbContext<DocQueryDbContext>(
+            connectionName,
+            configureDbContextOptions: options => options.UseNpgsql(npgsql => npgsql.UseVector()));
         builder.Services.AddPersistenceServices();
 
         var options = builder.Configuration.GetSection(PersistenceOptions.SectionName).Get<PersistenceOptions>() ?? new PersistenceOptions();
@@ -43,6 +46,7 @@ public static class PersistenceExtensions
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IIntegrationEventMapper, DocumentUploadedMapper>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IIntegrationEventMapper, DocumentChunkedMapper>());
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IIntegrationEventMapper, DocumentEmbeddedMapper>());
 
         return services;
     }

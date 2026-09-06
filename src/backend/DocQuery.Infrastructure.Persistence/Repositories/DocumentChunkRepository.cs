@@ -19,4 +19,10 @@ internal sealed class DocumentChunkRepository(DocQueryDbContext context) : IDocu
         context.DocumentChunks.RemoveRange(existing);
         await context.DocumentChunks.AddRangeAsync(chunks, cancellationToken);
     }
+
+    public async Task<IReadOnlyList<DocumentChunk>> GetByDocumentAsync(DocumentId documentId, CancellationToken cancellationToken) =>
+        await context.DocumentChunks
+            .Where(chunk => chunk.DocumentId == documentId)
+            .OrderBy(chunk => chunk.Position)
+            .ToListAsync(cancellationToken);
 }

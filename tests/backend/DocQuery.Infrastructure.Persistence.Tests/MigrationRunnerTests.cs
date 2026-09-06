@@ -16,13 +16,13 @@ public sealed class MigrationRunnerTests(PostgresFixture postgres)
         var logs = new CapturingLoggerProvider();
         var services = new ServiceCollection();
         services.AddLogging(logging => logging.AddProvider(logs).SetMinimumLevel(LogLevel.Debug));
-        services.AddDbContext<DocQueryDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddDbContext<DocQueryDbContext>(options => options.UseNpgsql(connectionString, npgsql => npgsql.UseVector()));
         await using var provider = services.BuildServiceProvider();
         var runner = new MigrationRunner(provider);
 
         await runner.StartAsync(CancellationToken.None);
 
-        await using var context = new DocQueryDbContext(new DbContextOptionsBuilder<DocQueryDbContext>().UseNpgsql(connectionString).Options);
+        await using var context = PostgresFixture.CreateContext(connectionString);
         Assert.NotEmpty(await context.Database.GetAppliedMigrationsAsync());
         var errors = logs.Entries.Where(entry => entry.Level >= LogLevel.Error).Select(entry => entry.Message).ToList();
         Assert.True(errors.Count == 0, "Unexpected error logs:" + Environment.NewLine + string.Join(Environment.NewLine, errors));
@@ -33,14 +33,14 @@ public sealed class MigrationRunnerTests(PostgresFixture postgres)
     {
         var connectionString = await postgres.CreateFreshDatabaseAsync();
         var services = new ServiceCollection();
-        services.AddDbContext<DocQueryDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddDbContext<DocQueryDbContext>(options => options.UseNpgsql(connectionString, npgsql => npgsql.UseVector()));
         await using var provider = services.BuildServiceProvider();
         var runner = new MigrationRunner(provider);
 
         await runner.StartAsync(CancellationToken.None);
         await runner.StartAsync(CancellationToken.None);
 
-        await using var context = new DocQueryDbContext(new DbContextOptionsBuilder<DocQueryDbContext>().UseNpgsql(connectionString).Options);
+        await using var context = PostgresFixture.CreateContext(connectionString);
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
     }
 

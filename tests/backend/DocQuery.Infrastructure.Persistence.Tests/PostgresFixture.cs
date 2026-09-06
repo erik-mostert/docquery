@@ -56,16 +56,15 @@ public sealed class PostgresFixture : IAsyncLifetime
     }
 
     public static DocQueryDbContext CreateContext(string connectionString) =>
-        new(new DbContextOptionsBuilder<DocQueryDbContext>().UseNpgsql(connectionString).Options);
+        new(new DbContextOptionsBuilder<DocQueryDbContext>().UseNpgsql(connectionString, npgsql => npgsql.UseVector()).Options);
 
-    public DocQueryDbContext CreateContext() =>
-        new(new DbContextOptionsBuilder<DocQueryDbContext>().UseNpgsql(ConnectionString).Options);
+    public DocQueryDbContext CreateContext() => CreateContext(ConnectionString);
 
     /// <summary>Builds the persistence services exactly as the host registers them, against the container.</summary>
     public ServiceProvider CreateServices(Action<IServiceCollection>? customise = null)
     {
         var services = new ServiceCollection();
-        services.AddDbContext<DocQueryDbContext>(options => options.UseNpgsql(ConnectionString));
+        services.AddDbContext<DocQueryDbContext>(options => options.UseNpgsql(ConnectionString, npgsql => npgsql.UseVector()));
         services.AddPersistenceServices();
         services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now));
         customise?.Invoke(services);

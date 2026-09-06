@@ -22,6 +22,8 @@ public sealed class DocQueryDbContext(DbContextOptions<DocQueryDbContext> option
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // pgvector; the server must allow-list it (locally the pgvector image does, in Azure the Bicep does).
+        modelBuilder.HasPostgresExtension("vector");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DocQueryDbContext).Assembly);
     }
 }

@@ -71,6 +71,34 @@ public sealed class UnitOfWorkTests(PostgresFixture postgres)
     }
 
     [DockerFact]
+    public async Task Marking_a_document_embedded_writes_a_document_embedded_outbox_message()
+    {
+        var document = Document.Upload("report.pdf", "application/pdf", 1234, UploadedAt);
+        document.MarkChunked(2, UploadedAt);
+        document.ClearDomainEvents();
+        await using var services = postgres.CreateServices();
+        await using (var scope = services.CreateAsyncScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<IDocumentRepository>().AddAsync(document, CancellationToken.None);
+            await scope.ServiceProvider.GetRequiredService<IUnitOfWork>().SaveChangesAsync(CancellationToken.None);
+        }
+
+        await using (var scope = services.CreateAsyncScope())
+        {
+            var tracked = await scope.ServiceProvider.GetRequiredService<IDocumentRepository>().GetByIdAsync(document.Id, CancellationToken.None);
+            tracked!.MarkEmbedded(UploadedAt.AddMinutes(2));
+            await scope.ServiceProvider.GetRequiredService<IUnitOfWork>().SaveChangesAsync(CancellationToken.None);
+        }
+
+        await using var context = postgres.CreateContext();
+        var candidates = await context.OutboxMessages.Where(m => m.Type == typeof(DocumentEmbedded).FullName).ToListAsync();
+        var message = Assert.Single(candidates, m => m.Payload.Contains(document.Id.Value.ToString(), StringComparison.OrdinalIgnoreCase));
+        var contract = JsonSerializer.Deserialize<DocumentEmbedded>(message.Payload, OutboxMessage.SerializerOptions);
+        Assert.NotNull(contract);
+        Assert.Equal(UploadedAt.AddMinutes(2), contract.EmbeddedAt);
+    }
+
+    [DockerFact]
     public async Task Saving_fails_when_a_domain_event_has_no_mapper()
     {
         var document = Document.Upload("report.pdf", "application/pdf", 1234, UploadedAt);
