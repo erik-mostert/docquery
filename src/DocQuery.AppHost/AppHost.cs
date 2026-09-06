@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 // Azure Blob Storage, run locally as Azurite. The "documents" container holds uploaded PDFs. The blob port is
@@ -39,6 +41,13 @@ builder.AddProject<Projects.DocQuery_Workers_OutboxRelay>("outbox-relay")
     .WithReference(serviceBus).WaitFor(serviceBus)
     .WaitFor(commandApi);
 
+// Azure OpenAI has no emulator. The embedding worker reads ConnectionStrings:openai either from Key Vault (when
+// ConnectionStrings:keyvault, the vault URI, is set as an AppHost user secret; see infra/README.md) or directly from
+// a ConnectionStrings:openai user secret. Both are optional here so the rest of the stack runs without Azure; the
+// worker itself fails fast at startup when neither is provided.
+var keyVault = builder.Configuration.GetConnectionString("keyvault") is not null ? builder.AddConnectionString("keyvault") : null;
+var openAi = builder.Configuration.GetConnectionString("openai") is not null ? builder.AddConnectionString("openai") : null;
+
 // Consumes DocumentUploaded from the "chunking" subscription; reads blobs, writes chunks and outbox rows.
 // Resource names are one namespace, so the project cannot also be called "chunking".
 builder.AddProject<Projects.DocQuery_Workers_Chunking>("chunking-worker")
@@ -46,6 +55,22 @@ builder.AddProject<Projects.DocQuery_Workers_Chunking>("chunking-worker")
     .WithReference(database).WaitFor(database)
     .WithReference(serviceBus).WaitFor(serviceBus)
     .WaitFor(commandApi);
+
+// Consumes DocumentChunked from the "embedding" subscription; calls Azure OpenAI, writes vectors and outbox rows.
+var embeddingWorker = builder.AddProject<Projects.DocQuery_Workers_Embedding>("embedding-worker")
+    .WithReference(database).WaitFor(database)
+    .WithReference(serviceBus).WaitFor(serviceBus)
+    .WaitFor(commandApi);
+
+if (keyVault is not null)
+{
+    embeddingWorker.WithReference(keyVault);
+}
+
+if (openAi is not null)
+{
+    embeddingWorker.WithReference(openAi);
+}
 
 builder.AddViteApp("web", "../clients/docquery.web")
     .WithReference(commandApi)
