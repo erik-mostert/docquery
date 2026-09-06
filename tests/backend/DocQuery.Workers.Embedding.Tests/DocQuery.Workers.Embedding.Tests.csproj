@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup />
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\backend\DocQuery.Workers.Embedding\DocQuery.Workers.Embedding.csproj" />
+    <ProjectReference Include="..\DocQuery.Tests.Common\DocQuery.Tests.Common.csproj" />
+  </ItemGroup>
+
+</Project>
