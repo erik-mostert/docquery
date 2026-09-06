@@ -1,3 +1,4 @@
+using DocQuery.Api.Common.Endpoints;
 using DocQuery.Application.Abstractions;
 using DocQuery.Application.Documents.Upload;
 using DocQuery.Command.Api.Options;
@@ -27,7 +28,7 @@ internal sealed class UploadDocumentEndpoint(IOptions<UploadOptions> uploadOptio
             .WithTags("Documents")
             .WithSummary("Upload a PDF document for processing.")
             .DisableAntiforgery()
-            .RequireRateLimiting(UploadRateLimitPolicy.Name)
+            .RequireRateLimiting(UploadRateLimitOptions.PolicyName)
             .WithMetadata(new RequestSizeLimitAttribute(uploadOptions.Value.MaxFileSizeBytes + MultipartOverheadBytes));
     }
 

@@ -1,11 +1,12 @@
 using DocQuery.Domain.Common;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DocQuery.Command.Api.ExceptionHandling;
+namespace DocQuery.Api.Common.ExceptionHandling;
 
 /// <summary>Maps a violated domain invariant to <c>400 Bad Request</c> with problem details.</summary>
-internal sealed class DomainExceptionHandler(IProblemDetailsService problemDetails) : IExceptionHandler
+public sealed class DomainExceptionHandler(IProblemDetailsService problemDetails) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {

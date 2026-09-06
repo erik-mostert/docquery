@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.Extensions.Resilience" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DocQuery.Domain\DocQuery.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

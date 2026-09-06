@@ -1,7 +1,8 @@
+using DocQuery.Api.Common.Cors;
+using DocQuery.Api.Common.Endpoints;
+using DocQuery.Api.Common.ExceptionHandling;
+using DocQuery.Api.Common.RateLimiting;
 using DocQuery.Application;
-using DocQuery.Command.Api.Cors;
-using DocQuery.Command.Api.Endpoints;
-using DocQuery.Command.Api.ExceptionHandling;
 using DocQuery.Command.Api.Options;
 using DocQuery.Command.Api.RateLimiting;
 using DocQuery.Infrastructure;
@@ -27,8 +28,9 @@ public static class CommandApiHost
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<DomainExceptionHandler>();
         builder.Services.AddExceptionHandler<BrokenCircuitExceptionHandler>();
-        builder.Services.AddUploadRateLimiting(builder.Configuration);
+        builder.Services.AddClientRateLimitPolicy<UploadRateLimitOptions>(builder.Configuration, UploadRateLimitOptions.PolicyName, UploadRateLimitOptions.SectionName);
         builder.Services.AddApiCors(builder.Configuration);
+        builder.Services.AddCommonEndpoints();
         builder.Services.AddEndpoints(typeof(CommandApiHost).Assembly);
 
         return builder;

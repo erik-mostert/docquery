@@ -4,6 +4,7 @@
     <Project Path="src/DocQuery.ServiceDefaults/DocQuery.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/src/backend/">
+    <Project Path="src/backend/DocQuery.Api.Common/DocQuery.Api.Common.csproj" />
     <Project Path="src/backend/DocQuery.Application/DocQuery.Application.csproj" />
     <Project Path="src/backend/DocQuery.Command.Api/DocQuery.Command.Api.csproj" />
     <Project Path="src/backend/DocQuery.Contracts/DocQuery.Contracts.csproj" />

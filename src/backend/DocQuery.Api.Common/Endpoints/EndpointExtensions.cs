@@ -1,7 +1,9 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace DocQuery.Command.Api.Endpoints;
+namespace DocQuery.Api.Common.Endpoints;
 
 public static class EndpointExtensions
 {
@@ -16,6 +18,16 @@ public static class EndpointExtensions
             .Select(type => ServiceDescriptor.Transient(typeof(IEndpoint), type));
 
         services.TryAddEnumerable(descriptors);
+
+        return services;
+    }
+
+    /// <summary>Registers the endpoints every API host exposes (health probes).</summary>
+    public static IServiceCollection AddCommonEndpoints(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.TryAddEnumerable(ServiceDescriptor.Transient<IEndpoint, HealthEndpoint>());
 
         return services;
     }

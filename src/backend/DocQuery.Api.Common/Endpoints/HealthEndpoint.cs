@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Routing;
 
-namespace DocQuery.Command.Api.Endpoints;
+namespace DocQuery.Api.Common.Endpoints;
 
 /// <summary>
 /// <c>/health</c>: readiness, every registered check must pass. <c>/alive</c>: liveness, only checks tagged

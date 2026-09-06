@@ -1,4 +1,7 @@
-namespace DocQuery.Command.Api.Cors;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace DocQuery.Api.Common.Cors;
 
 public static class CorsServiceCollectionExtensions
 {

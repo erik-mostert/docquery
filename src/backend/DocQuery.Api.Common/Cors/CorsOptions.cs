@@ -1,4 +1,4 @@
-namespace DocQuery.Command.Api.Cors;
+namespace DocQuery.Api.Common.Cors;
 
 /// <summary>Bound from the <c>Cors</c> configuration section.</summary>
 public sealed class CorsOptions
