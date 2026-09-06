@@ -33,11 +33,13 @@ src/
   DocQuery.ServiceDefaults/        telemetry, health checks, resilience defaults shared by all hosts
   backend/
     DocQuery.Domain/               entities, value objects, domain events
-    DocQuery.Application/          commands, handlers, abstractions
+    DocQuery.Application/          commands, queries, handlers, abstractions
     DocQuery.Contracts/            integration message contracts shared with workers
     DocQuery.Infrastructure/       Blob Storage, Service Bus (publish and consume), PDF extraction, tokenizer, Azure OpenAI
     DocQuery.Infrastructure.Persistence/  EF Core + PostgreSQL, migrations, outbox table and relay
+    DocQuery.Api.Common/           endpoint discovery, health, problem details, CORS, rate limiting shared by the APIs
     DocQuery.Command.Api/          write side: document upload
+    DocQuery.Query.Api/            read side: questions answered from the documents (RAG)
     DocQuery.Workers.OutboxRelay/  publishes outbox rows to Service Bus
     DocQuery.Workers.Chunking/     consumes DocumentUploaded, extracts text, writes chunks
     DocQuery.Workers.Embedding/    consumes DocumentChunked, embeds chunks with Azure OpenAI
@@ -51,12 +53,13 @@ tests/
     DocQuery.Infrastructure.Tests/            includes Azurite and Service Bus emulator tests (Docker)
     DocQuery.Infrastructure.Persistence.Tests/  PostgreSQL-backed tests (Docker)
     DocQuery.Command.Api.Tests/
+    DocQuery.Query.Api.Tests/
     DocQuery.Workers.OutboxRelay.Tests/
     DocQuery.Workers.Chunking.Tests/
     DocQuery.Workers.Embedding.Tests/
 ```
 
-Further projects (query API, deployment manifests) are added as the solution grows.
+Deployment manifests are added with the Kubernetes step.
 
 ## Command API
 
@@ -140,6 +143,37 @@ dotnet run tools/peek-servicebus.cs -- "<connection string>"
 ```
 
 Arguments and conventions for tools are in [tools/README.md](tools/README.md).
+
+## Query API
+
+`DocQuery.Query.Api` (Aspire resource `query-api`) is the read side. `POST /queries` with a JSON body
+`{ "question": "...", "documentId": "<optional guid>", "topK": <optional> }` embeds the question with the same
+model as the chunks, fetches the nearest chunks from pgvector (cosine, HNSW index), and asks the chat model
+(`AzureOpenAI:ChatDeployment`, `gpt-5-mini`) to answer from those passages only. The response is
+`{ "answer": "...", "citations": [ { "number", "documentId", "fileName", "pageNumber", "position", "excerpt", "score" } ] }`;
+`[n]` in the answer refers to citation `n`. With no embedded content the answer says so and the chat model is not
+called. See ADR 0019.
+
+- Retrieval size defaults to `Querying:DefaultTopK` and is capped by `Querying:MaxTopK`; an empty question or an
+  out-of-range `topK` is a 400 with problem details.
+- Azure OpenAI calls go through the same `Resilience:AzureOpenAI` pipeline as the embedding worker; an open circuit
+  is a 503 with `Retry-After`.
+- Questions are rate limited per client under `RateLimiting:Queries` (429 with `Retry-After`).
+- The OpenAI connection string comes from Key Vault or the direct user secret exactly as for the embedding worker.
+  The opt-in live test `AzureOpenAIChatSmokeTests` runs with the same `DOCQUERY_OPENAI_CONNECTION` variable.
+
+Try it against the `query-api` endpoint shown in the dashboard (PowerShell; `curl` there is an alias for
+`Invoke-WebRequest`):
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:5291/queries -ContentType "application/json" -Body '{"question": "What is this document about?"}' | ConvertTo-Json -Depth 5
+```
+
+Or with curl proper:
+
+```bash
+curl -X POST http://localhost:5291/queries -H "Content-Type: application/json" -d "{\"question\": \"What is this document about?\"}"
+```
 
 ## Build and test
 
