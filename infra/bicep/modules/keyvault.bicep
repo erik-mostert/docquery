@@ -22,6 +22,9 @@ resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
       name: 'standard'
     }
     enableRbacAuthorization: true
+    // Lets Azure Resource Manager read secrets referenced with getSecret() during a deployment (main.bicep reads
+    // the PostgreSQL password). Without it the deployment fails with "Access denied to first party service".
+    enabledForTemplateDeployment: true
     enableSoftDelete: true
     softDeleteRetentionInDays: 7
     // Off for the development environment so a deleted vault can be purged and its name reused. Turn on for
