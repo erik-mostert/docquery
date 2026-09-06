@@ -34,9 +34,13 @@ var documentEvents = serviceBus.AddServiceBusTopic("document-events");
 documentEvents.AddServiceBusSubscription("chunking").WithProperties(subscription => ReceiveOnly(subscription, MessageSubject.Of<DocumentUploaded>()));
 documentEvents.AddServiceBusSubscription("embedding").WithProperties(subscription => ReceiveOnly(subscription, MessageSubject.Of<DocumentChunked>()));
 
+// Declared first so the APIs can allow its origin (Aspire picks the Vite port). Its API URLs are attached below.
+var web = builder.AddViteApp("web", "../clients/docquery.web");
+
 var commandApi = builder.AddProject<Projects.DocQuery_Command_Api>("command-api")
     .WithReference(documents).WaitFor(documents)
-    .WithReference(database).WaitFor(database);
+    .WithReference(database).WaitFor(database)
+    .WithEnvironment("Cors__AllowedOrigins__0", web.GetEndpoint("http"));
 
 // The relay waits for the API because the API applies migrations at startup.
 builder.AddProject<Projects.DocQuery_Workers_OutboxRelay>("outbox-relay")
@@ -69,6 +73,7 @@ var embeddingWorker = builder.AddProject<Projects.DocQuery_Workers_Embedding>("e
 // Waits for the command API because that applies the migrations. Same Azure OpenAI wiring as the embedding worker.
 var queryApi = builder.AddProject<Projects.DocQuery_Query_Api>("query-api")
     .WithReference(database).WaitFor(database)
+    .WithEnvironment("Cors__AllowedOrigins__0", web.GetEndpoint("http"))
     .WaitFor(commandApi);
 
 foreach (var azureConsumer in new[] { embeddingWorker, queryApi })
@@ -84,8 +89,7 @@ foreach (var azureConsumer in new[] { embeddingWorker, queryApi })
     }
 }
 
-builder.AddViteApp("web", "../clients/docquery.web")
-    .WithReference(commandApi)
+web.WithReference(commandApi)
     .WithReference(queryApi)
     .WithEnvironment("VITE_API_URL", commandApi.GetEndpoint("http"))
     .WithEnvironment("VITE_QUERY_API_URL", queryApi.GetEndpoint("http"));
