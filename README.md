@@ -1,6 +1,6 @@
 # DocQuery
 
-Demo solution built to exercise concepts from the AI-200, AZ-104 and AZ-305 exams.
+Demo solution built to exercise concepts from the AI-200 course.
 
 Users upload PDF documents through a React UI. Each document is stored in Azure Blob Storage and a
 `DocumentUploaded` message is published to Azure Service Bus. A chunking worker splits the document,
